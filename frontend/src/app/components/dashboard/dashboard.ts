@@ -1,4 +1,4 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -8,10 +8,10 @@ import { AuthService } from '../../service/auth.service';
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA], // 👈 Permite usar <app-area-passageiro> sem quebrar o build
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
-}) // 👈 Corrigido: Agora o decorator está devidamente fechado!
+})
 export class DashboardComponent implements OnInit {
   telaAtiva: string = 'inicio';
   listaViagens: any[] = [];
@@ -31,12 +31,12 @@ export class DashboardComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef // 👈 Injetado o gerenciador de renderização
   ) {}
 
   ngOnInit(): void {
     this.carregarMetricasBanco();
-    this.carregarViagensAtivas();
   }
 
   private obterHeaders() {
@@ -50,15 +50,19 @@ export class DashboardComponent implements OnInit {
 
   carregarMetricasBanco() {
     this.http.get<any>('http://localhost:8080/api/dashboard/estatisticas', this.obterHeaders()).subscribe({
-      next: (dados) => {
-        // Log para você ver no console do navegador se o JSON realmente entrou aqui
-        console.log('Dados do dashboard recebidos:', dados);
+      next: (dados: any) => {
+        console.log('Dados do dashboard recebidos no TS:', dados);
 
         if (dados) {
-          // Garante a atribuição exata das chaves vinda do Java
-          this.dadosGlobais.totalPassageiros = Number(dados.totalPassageiros) || 0;
-          this.dadosGlobais.totalEmpresas = Number(dados.totalEmpresas) || 0;
-          this.dadosGlobais.faturamentoHoje = Number(dados.faturamentoHoje) || 0;
+          // Atualiza a referência criando um objeto totalmente novo
+          this.dadosGlobais = {
+            totalPassageiros: Number(dados.totalPassageiros) || 0,
+            totalEmpresas: Number(dados.totalEmpresas) || 0,
+            faturamentoHoje: Number(dados.faturamentoHoje) || 0
+          };
+
+          // 🔥 FORÇA O ANGULAR A RE-RENDERIZAR A TELA IMEDIATAMENTE
+          this.cdr.detectChanges();
         }
       },
       error: (err) => {
@@ -68,14 +72,7 @@ export class DashboardComponent implements OnInit {
   }
 
   carregarViagensAtivas() {
-    this.http.get<any[]>('http://localhost:8080/api/viagem/pesquisar?origem=&destino=&data=', this.obterHeaders()).subscribe({
-      next: (viagens) => {
-        this.listaViagens = viagens || [];
-      },
-      error: (err) => {
-        console.error('Erro ao listar viagens no painel:', err);
-      }
-    });
+    this.listaViagens = [];
   }
 
   definirTela(tela: string) {
@@ -84,7 +81,7 @@ export class DashboardComponent implements OnInit {
 
   excluirViagem(idViagem: number) {
     if (confirm('Deseja realmente excluir esta viagem?')) {
-      this.http.post<void>(`http://localhost:8080/api/viagem/deletar/${idViagem}`, {}, this.obterHeaders()).subscribe({
+      this.http.post<any>(`http://localhost:8080/api/viagem/deletar/${idViagem}`, {}, this.obterHeaders()).subscribe({
         next: () => {
           alert('Viagem deletada com sucesso!');
           this.carregarViagensAtivas();
