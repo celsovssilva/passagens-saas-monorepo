@@ -1,4 +1,7 @@
 package com.example.transport.response;
 
-public class DashboardResponse {
-}
+public record DashboardResponse (
+        long totalPassageiros,
+        long totalEmpresas,
+        double faturamentoHoje
+){}

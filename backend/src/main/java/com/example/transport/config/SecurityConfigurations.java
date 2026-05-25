@@ -38,7 +38,7 @@ public class SecurityConfigurations {
                     req.requestMatchers(HttpMethod.POST,"api/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST,"api/empresa/cadastrar").permitAll();
                     req.requestMatchers(HttpMethod.POST,"api/passageiro/cadastrar").permitAll();
-
+                    req.requestMatchers(HttpMethod.GET, "api/dashboard/estatisticas").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.POST,"api/compra/comprar").hasAnyRole("ADMIN","PASSAGEIRO");
                     req.requestMatchers(HttpMethod.PUT,"api/compra/atualizar/{idCompra}").hasAnyRole("ADMIN","PASSAGEIRO");
                     req.requestMatchers(HttpMethod.PATCH,"api/compra/{compraId}/cancelar").hasAnyRole("ADMIN","PASSAGEIRO");
@@ -71,10 +71,10 @@ public class SecurityConfigurations {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Permite o Angular
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // Verbos HTTP permitidos
-        configuration.setAllowedHeaders(List.of("*")); // Permite todos os cabeçalhos (como Authorization, Content-Type)
-        configuration.setAllowCredentials(true); // Permite envio de credenciais se necessário
+        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Permite seu Front-end
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

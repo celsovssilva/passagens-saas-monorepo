@@ -31,33 +31,80 @@
     </header>
 
     <div *ngIf="telaAtiva === 'inicio'">
+
       <section class="card admin-card" *ngIf="usuarioLogado.role === 'ADMIN'">
         <div class="card-header">
           <span class="icon">📊</span>
           <h3>Relatórios Globais do Sistema</h3>
         </div>
-        <p>Gerenciamento total de frotas, auditoria de usuários e fluxo financeiro geral.</p>
+        <p class="card-subtitle">Gerenciamento total de frotas, auditoria de usuários e fluxo financeiro geral.</p>
 
         <div class="stats-grid">
           <div class="stat-box">
-            <h4>{{ dadosGlobais.totalPassageiros }}</h4>
-            <p>Passageiros</p>
+            <span class="stat-value">{{ dadosGlobais.totalPassageiros }}</span>
+            <p class="stat-label">Passageiros</p>
           </div>
 
           <div class="stat-box">
-            <h4>{{ dadosGlobais.totalEmpresas }}</h4>
-            <p>Empresas</p>
+            <span class="stat-value">{{ dadosGlobais.totalEmpresas }}</span>
+            <p class="stat-label">Empresas</p>
           </div>
 
           <div class="stat-box">
-            <h4>R$ {{ dadosGlobais.faturamentoHoje | number:'1.2-2' }}</h4>
-            <p>Vendas Hoje</p>
+            <span class="stat-value">R$ {{ dadosGlobais.faturamentoHoje | number:'1.2-2' }}</span>
+            <p class="stat-label">Vendas Hoje</p>
           </div>
         </div>
       </section>
 
-      <section class="card">
-        <h3>Olá, {{ usuarioLogado.nome}}! 👋</h3>
+      <section class="card admin-table-section" *ngIf="usuarioLogado.role === 'ADMIN'">
+        <div class="card-header">
+          <span class="icon">🗺️</span>
+          <h3>Monitoramento de Viagens Ativas</h3>
+        </div>
+        <p class="table-subtitle">Lista de todas as rotas agendadas pelas empresas parceiras.</p>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>Origem</th>
+              <th>Destino</th>
+              <th>Data / Horário</th>
+              <th>Preço</th>
+              <th>Assentos Livres</th>
+              <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let viagem of listaViagens">
+              <td><strong>#{{ viagem.id }}</strong></td>
+              <td>{{ viagem.origem }}</td>
+              <td>{{ viagem.destino }}</td>
+              <td>{{ viagem.data | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="price-cell">R$ {{ viagem.preco | number:'1.2-2' }}</td>
+              <td>
+                  <span class="seat-badge" [class.empty]="viagem.assentosDisponiveis === 0">
+                    {{ viagem.assentosDisponiveis }} vagas
+                  </span>
+              </td>
+              <td>
+                <button class="btn-action-delete" (click)="excluirViagem(viagem.id)" title="Excluir Viagem">
+                  🗑️ Excluir
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="listaViagens.length === 0">
+              <td colspan="7" class="no-data">Nenhuma viagem cadastrada no sistema até o momento.</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card welcome-card">
+        <h3>Olá, {{ usuarioLogado.nome }}! 👋</h3>
         <p>Você está conectado com o perfil: <strong>{{ usuarioLogado.role }}</strong>.</p>
       </section>
     </div>

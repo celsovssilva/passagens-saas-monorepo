@@ -1,27 +1,30 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../service/auth.service'; // Ajuste o caminho de pastas se necessário
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../service/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
 export class LoginComponent {
-  // Sincronizado com o [(ngModel)]="credenciais.login" e "credenciais.senha" do seu HTML
-  credenciais = { login: '', senha: '' };
-  errorMessage = '';
+  // Mantém o objeto vinculado ao seu formulário HTML
+  credenciais = {
+    login: '',
+    senha: ''
+  };
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
-  // Sincronizado com o (ngSubmit)="executarLogin()" do seu HTML
   executarLogin() {
-    this.errorMessage = '';
-
-    // Mapeia os campos em português para o que o AuthService/Backend esperam (geralmente email e password)
+    // 🚀 CORRIGIDO: Enviando exatamente a chave 'login' que o seu Java espera receber
     const dadosLogin = {
       login: this.credenciais.login,
       senha: this.credenciais.senha
@@ -30,10 +33,12 @@ export class LoginComponent {
     this.authService.login(dadosLogin).subscribe({
       next: (response) => {
         console.log('Login efetuado com sucesso!', response);
+        // Muda para a tela do dashboard agora que o token foi gerado
+        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        this.errorMessage = 'Credenciais inválidas. Verifique seu usuário e senha.';
-        console.error('Erro no login:', err);
+        console.error('Erro ao fazer login:', err);
+        alert('Usuário ou senha incorretos.');
       }
     });
   }

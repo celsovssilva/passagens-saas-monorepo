@@ -1,65 +1,56 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private apiUrl = 'http://localhost:8080/api/auth';
+  private apiPassageiro = 'http://localhost:8080/api/passageiro';
+  private apiEmpresa = 'http://localhost:8080/api/empresa';
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router
+  ) {}
 
-  login(credentials: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/login`, credentials).pipe(
+  login(dadosLogin: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/login`, dadosLogin).pipe(
       tap(response => {
-        if (response && response.token) {
-          localStorage.setItem('token', response.token);
-
-          // Trata o role dinamicamente caso ele venha direto ou dentro de um array
-          const userRole = response.role || response.roles || 'PASSAGEIRO';
-          localStorage.setItem('role', String(userRole).toUpperCase());
-
-          // Redireciona direto para o Dashboard após salvar os dados
-          this.router.navigate(['/dashboard']);
+        if (response) {
+          this.salvarToken(response);
         }
       })
     );
   }
 
-  // Métodos de cadastro que estavam faltando
-  cadastrarPassageiro(dados: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/cadastro/passageiro`, dados);
+  cadastrarPassageiro(dadosPassageiro: any): Observable<any> {
+    return this.http.post<any>(`${this.apiPassageiro}/cadastrar`, dadosPassageiro);
   }
 
-  cadastrarEmpresa(dados: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/cadastro/empresa`, dados);
+  cadastrarEmpresa(dadosEmpresa: any): Observable<any> {
+    return this.http.post<any>(`${this.apiEmpresa}/cadastrar`, dadosEmpresa);
+  }
+
+  salvarToken(response: any) {
+    if (response && response.token) {
+      localStorage.setItem('token', response.token);
+    }
   }
 
   getToken(): string | null {
     return localStorage.getItem('token');
   }
 
-  getRole(): string | null {
-    return localStorage.getItem('role');
+  isAutenticado(): boolean {
+    const token = this.getToken();
+    return !!token && token !== 'undefined' && token !== 'null';
   }
 
   logout() {
-    localStorage.clear();
+    localStorage.removeItem('token');
     this.router.navigate(['/login']);
-  }
-
-  // Validações rápidas de perfil usadas no HTML via *ngIf
-  isAdmin(): boolean {
-    return this.getRole() === 'ADMIN';
-  }
-
-  isEmpresa(): boolean {
-    return this.getRole() === 'EMPRESA' || this.isAdmin();
-  }
-
-  isPassageiro(): boolean {
-    return this.getRole() === 'PASSAGEIRO' || this.isAdmin();
   }
 }
