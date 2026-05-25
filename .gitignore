@@ -1,0 +1,30 @@
+﻿# IDE
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+
+# Java/Maven
+target/
+*.class
+*.log
+.mvn/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.local
+
+# Frontend
+dist/
+build/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
