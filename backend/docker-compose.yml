@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # Porta que o Spring Boot usa para enviar as mensagens
+      - "15672:15672" # Porta que você usa no navegador para ver o painel do RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest

@@ -1,0 +1,83 @@
+<div class="cadastro-container">
+  <div class="cadastro-box">
+    <h2>Crie sua Conta no Transpôrt</h2>
+
+    <div class="tipo-selecao">
+      <label>Quero me cadastrar como:</label>
+      <div class="radio-group">
+        <label>
+          <input type="radio" name="tipo" value="PASSAGEIRO" checked (change)="mudarTipo('PASSAGEIRO')">
+          Passageiro
+        </label>
+        <label>
+          <input type="radio" name="tipo" value="EMPRESA" (change)="mudarTipo('EMPRESA')">
+          Empresa / Agência
+        </label>
+      </div>
+    </div>
+
+    <form (ngSubmit)="executarCadastro()">
+
+      <div *ngIf="tipoUsuario === 'PASSAGEIRO'">
+        <div class="input-group">
+          <label>Nome</label>
+          <input type="text" name="nome" [(ngModel)]="dadosPassageiro.nome" placeholder="Seu nome" required>
+        </div>
+        <div class="input-group">
+          <label>Sobrenome</label>
+          <input type="text" name="sobrenome" [(ngModel)]="dadosPassageiro.sobrenome" placeholder="Seu sobrenome" required>
+        </div>
+        <div class="input-group">
+          <label>E-mail</label>
+          <input type="email" name="emailPassageiro" [(ngModel)]="dadosPassageiro.email" placeholder="seuemail@exemplo.com" required>
+        </div>
+        <div class="input-group">
+          <label>CPF</label>
+          <input type="text" name="cpf" [(ngModel)]="dadosPassageiro.cpf" placeholder="000.000.000-00" required>
+        </div>
+        <div class="input-group">
+          <label>Telefone</label>
+          <input type="text" name="phone" [(ngModel)]="dadosPassageiro.phone" placeholder="(00) 00000-0000" required>
+        </div>
+        <div class="input-group">
+          <label>Idade</label>
+          <input type="number" name="idade" [(ngModel)]="dadosPassageiro.idade" placeholder="Sua idade" required>
+        </div>
+        <div class="input-group">
+          <label>Senha</label>
+          <input type="password" name="passwordPassageiro" [(ngModel)]="dadosPassageiro.password" placeholder="Crie uma senha" required>
+        </div>
+      </div>
+
+      <div *ngIf="tipoUsuario === 'EMPRESA'">
+        <div class="input-group">
+          <label>Razão Social</label>
+          <input type="text" name="razaoSocial" [(ngModel)]="dadosEmpresa.razaoSocial" placeholder="Nome da empresa" required>
+        </div>
+        <div class="input-group">
+          <label>CNPJ</label>
+          <input type="text" name="cnpj" [(ngModel)]="dadosEmpresa.cnpj" placeholder="00.000.000/0001-00" required>
+        </div>
+        <div class="input-group">
+          <label>E-mail Corporativo</label>
+          <input type="email" name="emailEmpresa" [(ngModel)]="dadosEmpresa.email" placeholder="empresa@exemplo.com" required>
+        </div>
+        <div class="input-group">
+          <label>Telefone Comercial</label>
+          <input type="text" name="telefone" [(ngModel)]="dadosEmpresa.telefone" placeholder="(00) 0000-0000" required>
+        </div>
+        <div class="input-group">
+          <label>Endereço da Sede</label>
+          <input type="text" name="endereco" [(ngModel)]="dadosEmpresa.endereco" placeholder="Rua, Número, Bairro" required>
+        </div>
+        <div class="input-group">
+          <label>Senha</label>
+          <input type="password" name="passwordEmpresa" [(ngModel)]="dadosEmpresa.password" placeholder="Crie uma senha corporativa" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-cadastrar">Finalizar Cadastro</button>
+      <p class="link-login">Já tem uma conta? <a routerLink="/login">Ir para o Login</a></p>
+    </form>
+  </div>
+</div>

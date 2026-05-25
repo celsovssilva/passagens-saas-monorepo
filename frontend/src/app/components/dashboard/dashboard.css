@@ -1,0 +1,80 @@
+:root {
+  --primary: #2563eb;
+  --bg-main: #f8fafc;
+  --sidebar-bg: #0f172a;
+  --text-dark: #1e293b;
+  --card-border: #e2e8f0;
+}
+
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  background: #0f172a;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.brand h2 { font-size: 22px; font-weight: 700; margin: 0; }
+
+.user-profile-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1e293b;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: #2563eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.user-name { font-size: 14px; font-weight: 600; margin: 0; }
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: #64748b; font-weight: bold; }
+.badge.admin { background: #ef4444; }
+
+.nav-menu { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+.nav-item { color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; display: block; transition: 0.2s; }
+.nav-item:hover, .nav-item.active { background: #2563eb; color: white; }
+
+.btn-logout { background: #b91c1c; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; }
+.btn-logout:hover { background: #991b1b; }
+
+/* Main Content */
+.main-content { flex-grow: 1; padding: 40px; background: #f1f5f9; overflow-y: auto; }
+.content-header { margin-bottom: 32px; }
+.content-header h1 { font-size: 28px; color: #0f172a; margin: 0; }
+.content-header .date { color: #64748b; margin: 4px 0 0 0; }
+
+.card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); margin-bottom: 24px; border: 1px solid #e2e8f0; }
+.card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.card-header h3 { margin: 0; font-size: 18px; color: #0f172a; }
+
+.stats-grid { display: flex; gap: 16px; margin-top: 20px; }
+.stat-box { flex: 1; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
+.stat-box h4 { font-size: 24px; color: #2563eb; margin: 0; }
+.stat-box p { margin: 4px 0 0 0; color: #64748b; font-size: 14px; }

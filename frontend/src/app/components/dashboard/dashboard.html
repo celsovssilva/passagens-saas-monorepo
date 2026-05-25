@@ -1,0 +1,76 @@
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo-icon">🚌</span>
+      <h2>Transpôrt</h2>
+    </div>
+
+    <div class="user-profile-box">
+      <div class="avatar">{{ usuarioLogado.nome ? usuarioLogado.nome.charAt(0) : 'A' }}</div>
+      <div class="user-info">
+        <p class="user-name">{{ usuarioLogado.nome }}</p>
+        <span class="badge" [ngClass]="usuarioLogado.role.toLowerCase()">{{ usuarioLogado.role }}</span>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'inicio' }" (click)="definirTela('inicio')">📊 Início</a>
+      <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'comprar' }" (click)="definirTela('comprar')" *ngIf="usuarioLogado.role === 'PASSAGEIRO'">🎫 Comprar Passagem</a>
+      <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'frota' }" (click)="definirTela('frota')" *ngIf="usuarioLogado.role === 'EMPRESA'">🚌 Minha Frota</a>
+    </nav>
+
+    <button (click)="logout()" class="btn-logout">
+      <span>🚪</span> Sair do Sistema
+    </button>
+  </aside>
+
+  <main class="main-content">
+    <header class="content-header">
+      <h1>Painel de Controle</h1>
+      <p class="date">Conectado como: {{ usuarioLogado.email }}</p>
+    </header>
+
+    <div *ngIf="telaAtiva === 'inicio'">
+      <section class="card admin-card" *ngIf="usuarioLogado.role === 'ADMIN'">
+        <div class="card-header">
+          <span class="icon">📊</span>
+          <h3>Relatórios Globais do Sistema</h3>
+        </div>
+        <p>Gerenciamento total de frotas, auditoria de usuários e fluxo financeiro geral.</p>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <h4>{{ dadosGlobais.totalPassageiros }}</h4>
+            <p>Passageiros</p>
+          </div>
+
+          <div class="stat-box">
+            <h4>{{ dadosGlobais.totalEmpresas }}</h4>
+            <p>Empresas</p>
+          </div>
+
+          <div class="stat-box">
+            <h4>R$ {{ dadosGlobais.faturamentoHoje | number:'1.2-2' }}</h4>
+            <p>Vendas Hoje</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Olá, {{ usuarioLogado.nome}}! 👋</h3>
+        <p>Você está conectado com o perfil: <strong>{{ usuarioLogado.role }}</strong>.</p>
+      </section>
+    </div>
+
+    <div *ngIf="telaAtiva === 'comprar'">
+      <app-area-passageiro [emailUsuario]="usuarioLogado.email"></app-area-passageiro>
+    </div>
+
+    <div *ngIf="telaAtiva === 'frota'">
+      <section class="card">
+        <h3>Gerenciamento da Frota</h3>
+        <p>Área destinada ao cadastro de ônibus e rotas da empresa.</p>
+      </section>
+    </div>
+  </main>
+</div>
