@@ -6,10 +6,9 @@ import com.example.transport.service.RotasService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/rotas")
@@ -21,5 +20,10 @@ public class RotasController {
     public ResponseEntity<RotasResponse> cadastrarRota(@RequestBody @Valid RotasRequest r){
         var rota = rotasService.cadastrar(r);
         return ResponseEntity.ok(rota);
+    }
+    @GetMapping
+    public ResponseEntity<List<RotasResponse>> listarTodas() {
+
+        return ResponseEntity.ok(rotasService.listarTodas());
     }
 }

@@ -9,6 +9,9 @@ import com.example.transport.service.RotasService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class RotasServiceIMPL implements RotasService {
     @Autowired
@@ -31,4 +34,10 @@ public class RotasServiceIMPL implements RotasService {
         rotasRepository.save(rotas);
         return new RotasResponse(rotas);
     }
+
+    @Override
+    public List<RotasResponse> listarTodas() {
+        List<Rotas> r = rotasRepository.findAll();
+        return  r.stream().map(RotasResponse::new).collect(Collectors.toList());
+     }
 }
