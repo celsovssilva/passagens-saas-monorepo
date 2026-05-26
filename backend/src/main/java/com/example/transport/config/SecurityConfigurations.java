@@ -56,13 +56,14 @@ public class SecurityConfigurations {
                     req.requestMatchers(HttpMethod.PUT,"api/transport/atualizar/{id}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.GET,"api/transport/buscar/{id}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.DELETE,"api/transport/deletar/{id}").hasAnyRole("ADMIN","EMPRESA");
+                    req.requestMatchers(HttpMethod.DELETE,"api/viagem/deletar/{idViagem}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.POST,"api/viagem/cadastrar").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.POST,"api/viagem/agendar").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/viagem/buscar/{id}").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/viagem/pesquisar").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/viagem/listar-passageiros/{viagemId}").authenticated();
-                    req.requestMatchers(HttpMethod.POST,"api/viagem/deletar/{idViagem}").hasAnyRole("ADMIN","EMPRESA");
-                    req.requestMatchers(HttpMethod.GET,"api/rotas").hasAnyRole("ADMIN","EMPRESA");
+
+                    req.requestMatchers(HttpMethod.GET,"api/rotas").authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

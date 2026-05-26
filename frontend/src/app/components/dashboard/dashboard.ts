@@ -122,13 +122,19 @@ export class DashboardComponent implements OnInit {
   }
 
   excluirViagem(idViagem: number) {
-    if (confirm('Deseja realmente excluir esta rota do sistema?')) {
-      this.http.delete<any>(`http://localhost:8080/api/rotas/${idViagem}`, this.obterHeaders()).subscribe({
+    if (confirm('Deseja realmente excluir esta viagem do sistema?')) {
+// Depois (Correto):
+      this.http.delete(`http://localhost:8080/api/viagem/deletar/${idViagem}`, this.obterHeaders()).subscribe({
         next: () => {
-          alert('Rota deletada com sucesso!');
+          alert('Viagem excluída com sucesso!');
+
           this.carregarViagensAtivas();
+
+          this.cdr.detectChanges(); // Força o Angular a renderizar a tela limpa
         },
-        error: (err) => console.error('Erro ao deletar viagem:', err)
+        error: (err) => {
+          console.error('Erro ao deletar:', err);
+        }
       });
     }
   }
