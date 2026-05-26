@@ -14,7 +14,7 @@
     </div>
 
     <nav class="nav-menu">
-      <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'inicio' }" (click)="definirTela('inicio')">📊 Início</a>
+      <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'inicio' || telaAtiva === 'cadastrar-rota' }" (click)="definirTela('inicio')">📊 Início</a>
       <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'comprar' }" (click)="definirTela('comprar')" *ngIf="usuarioLogado.role === 'PASSAGEIRO'">🎫 Comprar Passagem</a>
       <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'frota' }" (click)="definirTela('frota')" *ngIf="usuarioLogado.role === 'EMPRESA'">🚌 Minha Frota</a>
     </nav>
@@ -58,9 +58,12 @@
       </section>
 
       <section class="card admin-table-section" *ngIf="usuarioLogado.role === 'ADMIN'">
-        <div class="card-header">
-          <span class="icon">🗺️</span>
-          <h3>Monitoramento de Viagens Ativas</h3>
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span class="icon">🗺️</span>
+            <h3 style="display: inline-block; margin-left: 8px;">Monitoramento de Viagens Ativas</h3>
+          </div>
+          <button class="btn-primary" (click)="definirTela('cadastrar-rota')" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">➕ Cadastrar Nova Rota</button>
         </div>
         <p class="table-subtitle">Lista de todas as rotas agendadas pelas empresas parceiras.</p>
 
@@ -71,24 +74,20 @@
               <th>ID</th>
               <th>Origem</th>
               <th>Destino</th>
-              <th>Data / Horário</th>
-              <th>Preço</th>
-              <th>Assentos Livres</th>
+              <th>Horário Padrão</th>
+              <th>Preço Base</th>
               <th>Ações</th>
             </tr>
             </thead>
             <tbody>
             <tr *ngFor="let viagem of listaViagens">
               <td><strong>#{{ viagem.id }}</strong></td>
-              <td>{{ viagem.origem }}</td>
-              <td>{{ viagem.destino }}</td>
-              <td>{{ viagem.data | date:'dd/MM/yyyy HH:mm' }}</td>
-              <td class="price-cell">R$ {{ viagem.preco | number:'1.2-2' }}</td>
+              <td>{{ viagem.origem }} ({{ viagem.ufOrigem }})</td>
+              <td>{{ viagem.destino }} ({{ viagem.ufDestino }})</td>
               <td>
-                  <span class="seat-badge" [class.empty]="viagem.assentosDisponiveis === 0">
-                    {{ viagem.assentosDisponiveis }} vagas
-                  </span>
+                <span class="time-badge">🕒 {{ viagem.horarioFormatado }}</span>
               </td>
+              <td class="price-cell">R$ {{ viagem.valorBase | number:'1.2-2' }}</td>
               <td>
                 <button class="btn-action-delete" (click)="excluirViagem(viagem.id)" title="Excluir Viagem">
                   🗑️ Excluir
@@ -96,7 +95,7 @@
               </td>
             </tr>
             <tr *ngIf="listaViagens.length === 0">
-              <td colspan="7" class="no-data">Nenhuma viagem cadastrada no sistema até o momento.</td>
+              <td colspan="6" class="no-data">Nenhuma viagem cadastrada no sistema até o momento.</td>
             </tr>
             </tbody>
           </table>
@@ -106,6 +105,54 @@
       <section class="card welcome-card">
         <h3>Olá, {{ usuarioLogado.nome }}! 👋</h3>
         <p>Você está conectado com o perfil: <strong>{{ usuarioLogado.role }}</strong>.</p>
+      </section>
+    </div>
+
+    <div *ngIf="telaAtiva === 'cadastrar-rota'">
+      <section class="card" style="max-width: 700px; margin-top: 20px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3>➕ Cadastrar Nova Rota Fixa</h3>
+          <button (click)="definirTela('inicio')" style="background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">⬅️ Voltar</button>
+        </div>
+
+        <form #rotaForm="ngForm" (ngSubmit)="salvarNovaRota(rotaForm.value, rotaForm)" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; gap: 16px;">
+            <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569;">Cidade Origem:</label>
+              <input type="text" name="origem" ngModel required placeholder="Ex: Maceió" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569;">UF Origem:</label>
+              <input type="text" name="ufOrigem" ngModel required maxlength="2" placeholder="AL" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 16px;">
+            <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569;">Cidade Destino:</label>
+              <input type="text" name="destino" ngModel required placeholder="Ex: Recife" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569;">UF Destino:</label>
+              <input type="text" name="ufDestino" ngModel required maxlength="2" placeholder="PE" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 16px;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569;">Preço Base (R$):</label>
+              <input type="number" name="valorBase" ngModel required step="0.01" placeholder="80.00" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569;">Horário de Saída:</label>
+              <input type="time" name="horarioPadrao" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            </div>
+          </div>
+
+          <button type="submit" [disabled]="!rotaForm.valid" style="background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+            💾 Salvar Rota Operacional
+          </button>
+        </form>
       </section>
     </div>
 

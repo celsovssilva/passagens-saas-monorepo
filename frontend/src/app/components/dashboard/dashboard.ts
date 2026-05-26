@@ -1,5 +1,6 @@
 import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms'; // 👈 Essencial para o funcionamento do formulário
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../service/auth.service';
@@ -7,7 +8,7 @@ import { AuthService } from '../../service/auth.service';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule], // 👈 FormsModule adicionado aqui para não quebrar o build
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
@@ -32,11 +33,13 @@ export class DashboardComponent implements OnInit {
     private http: HttpClient,
     private authService: AuthService,
     private router: Router,
-    private cdr: ChangeDetectorRef // 👈 Injetado o gerenciador de renderização
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    // Executa os dois carregamentos assim que a tela abre
     this.carregarMetricasBanco();
+    this.carregarViagensAtivas();
   }
 
   private obterHeaders() {
@@ -54,14 +57,13 @@ export class DashboardComponent implements OnInit {
         console.log('Dados do dashboard recebidos no TS:', dados);
 
         if (dados) {
-          // Atualiza a referência criando um objeto totalmente novo
+          // Mantido exatamente a atribuição reativa que deu certo antes
           this.dadosGlobais = {
             totalPassageiros: Number(dados.totalPassageiros) || 0,
             totalEmpresas: Number(dados.totalEmpresas) || 0,
             faturamentoHoje: Number(dados.faturamentoHoje) || 0
           };
 
-          // 🔥 FORÇA O ANGULAR A RE-RENDERIZAR A TELA IMEDIATAMENTE
           this.cdr.detectChanges();
         }
       },
@@ -72,7 +74,47 @@ export class DashboardComponent implements OnInit {
   }
 
   carregarViagensAtivas() {
-    this.listaViagens = [];
+    // Busca os dados do seu endpoint do Java que lista todas as rotas fixas
+    this.http.get<any[]>('http://localhost:8080/api/rotas', this.obterHeaders()).subscribe({
+      next: (dados) => {
+        console.log('Rotas carregadas para a tabela:', dados);
+        this.listaViagens = dados || [];
+        this.cdr.detectChanges(); // Garante a renderização estável na tabela
+      },
+      error: (err) => {
+        console.error('Erro ao listar rotas no painel:', err);
+      }
+    });
+  }
+
+  // 🔥 Nova função para cadastrar a Rota enviando para o RotasController do Java
+  salvarNovaRota(dadosForm: any, formReference: any) {
+    let horarioOriginal = dadosForm.horarioPadrao;
+    if (horarioOriginal && horarioOriginal.split(':').length === 2) {
+      horarioOriginal = `${horarioOriginal}:00`; // Formata para LocalTime (HH:mm:ss)
+    }
+
+    const payload = {
+      origem: dadosForm.origem,
+      ufOrigem: dadosForm.ufOrigem ? dadosForm.ufOrigem.toUpperCase() : '',
+      destino: dadosForm.destino,
+      ufDestino: dadosForm.ufDestino ? dadosForm.ufDestino.toUpperCase() : '',
+      valorBase: Number(dadosForm.valorBase),
+      horarioPadrao: horarioOriginal
+    };
+
+    this.http.post<any>('http://localhost:8080/api/rotas/cadastrar', payload, this.obterHeaders()).subscribe({
+      next: () => {
+        alert('Nova rota operacional cadastrada com sucesso!');
+        formReference.reset();
+        this.carregarViagensAtivas(); // Atualiza a tabela por baixo
+        this.telaAtiva = 'inicio'; // Voltar para a tela inicial
+      },
+      error: (err) => {
+        console.error('Erro ao cadastrar rota:', err);
+        alert('Erro ao salvar nova rota. Verifique os dados fornecidos.');
+      }
+    });
   }
 
   definirTela(tela: string) {
@@ -80,10 +122,10 @@ export class DashboardComponent implements OnInit {
   }
 
   excluirViagem(idViagem: number) {
-    if (confirm('Deseja realmente excluir esta viagem?')) {
-      this.http.post<any>(`http://localhost:8080/api/viagem/deletar/${idViagem}`, {}, this.obterHeaders()).subscribe({
+    if (confirm('Deseja realmente excluir esta rota do sistema?')) {
+      this.http.delete<any>(`http://localhost:8080/api/rotas/${idViagem}`, this.obterHeaders()).subscribe({
         next: () => {
-          alert('Viagem deletada com sucesso!');
+          alert('Rota deletada com sucesso!');
           this.carregarViagensAtivas();
         },
         error: (err) => console.error('Erro ao deletar viagem:', err)
