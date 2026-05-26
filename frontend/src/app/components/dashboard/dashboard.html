@@ -91,7 +91,7 @@
                 R$ {{ (viagem.valor || viagem.valorBase) | number:'1.2-2' }}
               </td>
               <td>
-                <button class="btn-action-delete" (click)="excluirViagem(rota.v.id)" title="Excluir Viagem">
+                <button class="btn-action-delete" (click)="excluirViagem(viagem.id)" title="Excluir Viagem">
                   🗑️ Excluir
                 </button>
               </td>

@@ -96,7 +96,7 @@ public class ViagemServiceIMPL implements ViagemService {
     @Override
     public void deleteViagem(Long idViagem) {
 
-        viagemRepository.deleteById(idViagem);
+        viagemRepository.deletarPorId(idViagem);
 
     }
 
