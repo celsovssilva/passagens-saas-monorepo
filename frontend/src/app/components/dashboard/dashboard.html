@@ -6,17 +6,19 @@
     </div>
 
     <div class="user-profile-box">
-      <div class="avatar">{{ usuarioLogado.nome ? usuarioLogado.nome.charAt(0) : 'A' }}</div>
+      <div class="avatar">{{ usuarioLogado.nome ? usuarioLogado.nome.charAt(0) : 'U' }}</div>
       <div class="user-info">
         <p class="user-name">{{ usuarioLogado.nome }}</p>
-        <span class="badge" [ngClass]="usuarioLogado.role.toLowerCase()">{{ usuarioLogado.role }}</span>
+        <span class="badge" [ngClass]="usuarioLogado.role ? usuarioLogado.role.toLowerCase() : 's-perfil'">
+          {{ usuarioLogado.role || 'Sem Perfil' }}
+        </span>
       </div>
     </div>
 
     <nav class="nav-menu">
       <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'inicio' || telaAtiva === 'cadastrar-rota' }" (click)="definirTela('inicio')">📊 Início</a>
       <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'comprar' }" (click)="definirTela('comprar')" *ngIf="usuarioLogado.role === 'PASSAGEIRO'">🎫 Comprar Passagem</a>
-      <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'frota' }" (click)="definirTela('frota')" *ngIf="usuarioLogado.role === 'EMPRESA'">🚌 Minha Frota</a>
+      <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'frota' }" (click)="definirTela('frota')" *ngIf="usuarioLogado.role === 'EMPRESA' || usuarioLogado.role === 'ADMIN'">🚌 Minha Frota</a>
     </nav>
 
     <button (click)="logout()" class="btn-logout">
@@ -57,13 +59,13 @@
         </div>
       </section>
 
-      <section class="card admin-table-section" *ngIf="usuarioLogado.role === 'ADMIN'">
+      <section class="card admin-table-section">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
           <div>
             <span class="icon">🗺️</span>
             <h3 style="display: inline-block; margin-left: 8px;">Monitoramento de Viagens Ativas</h3>
           </div>
-          <button class="btn-primary" (click)="definirTela('cadastrar-rota')" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">➕ Cadastrar Nova Rota</button>
+          <button *ngIf="usuarioLogado.role === 'ADMIN'" class="btn-primary" (click)="definirTela('cadastrar-rota')" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">➕ Cadastrar Nova Viagem</button>
         </div>
         <p class="table-subtitle">Monitoramento em tempo real de assentos, frotas e programações.</p>
 
@@ -76,40 +78,40 @@
               <th>Veículo Escalado</th>
               <th>Vagas Disponíveis</th>
               <th>Preço Passagem</th>
-              <th>Ações</th>
+              <th *ngIf="usuarioLogado.role === 'ADMIN'">Ações</th>
             </tr>
             </thead>
             <tbody>
             <tr *ngFor="let viagem of listaViagens">
               <td><strong>#{{ viagem.id }}</strong></td>
               <td>
-                <span>📍 {{ viagem.origem }} ({{ viagem.ufOrigem }})</span><br>
-                <span>🏁 {{ viagem.destino }} ({{ viagem.ufDestino }})</span><br>
+                <span>📍 {{ viagem.origem }} {{ viagem.ufOrigem ? '(' + viagem.ufOrigem + ')' : '' }}</span><br>
+                <span>🏁 {{ viagem.destino }} {{ viagem.ufDestino ? '(' + viagem.ufDestino + ')' : '' }}</span><br>
                 <small class="time-badge" style="color: #64748b; font-size: 11px; display: inline-block; margin-top: 4px;">
                   🕒 {{ viagem.dataSaida | date:'dd/MM/yyyy HH:mm' }}
                 </small>
               </td>
               <td>
                 <span class="bus-model" style="font-weight: 500;">
-                  🚌 {{ viagem.transporteModelo || 'Não escalado' }}
+                  🚌 {{ viagem.transporteModelo || viagem.transporte?.modelo || 'Veículo Escalado' }}
                 </span>
               </td>
               <td>
-                <span [style.color]="viagem.vagasDisponiveis > 0 ? '#10b981' : '#ef4444'" style="font-weight: bold;">
-                  🪑 {{ viagem.vagasDisponiveis }} assentos livres
+                <span [style.color]="(viagem.vagasDisponiveis ?? viagem.capacidade ?? 0) > 0 ? '#10b981' : '#ef4444'" style="font-weight: bold;">
+                  🪑 {{ viagem.vagasDisponiveis ?? viagem.capacidade ?? 42 }} assentos livres
                 </span>
               </td>
               <td class="price-cell" style="font-weight: 600; color: #1e293b;">
-                R$ {{ viagem.valor | number:'1.2-2' }}
+                R$ {{ (viagem.valor || viagem.valorBase || 0) | number:'1.2-2' }}
               </td>
-              <td>
+              <td *ngIf="usuarioLogado.role === 'ADMIN'">
                 <button class="btn-action-delete" (click)="excluirViagem(viagem.id)" title="Excluir Viagem">
                   🗑️ Excluir
                 </button>
               </td>
             </tr>
 
-            <tr *ngIf="!listaViagens || listaViagens?.length === 0">
+            <tr *ngIf="!listaViagens || listaViagens.length === 0">
               <td colspan="6" class="no-data" style="text-align: center; padding: 20px; color: #64748b; font-style: italic;">
                 Nenhuma viagem operacional ativa cadastrada no sistema.
               </td>
@@ -125,49 +127,48 @@
       </section>
     </div>
 
-    <div *ngIf="telaAtiva === 'cadastrar-rota'">
+    <div *ngIf="telaAtiva === 'cadastrar-rota' && usuarioLogado.role === 'ADMIN'">
       <section class="card" style="max-width: 700px; margin-top: 20px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3>➕ Cadastrar Nova Rota Fixa</h3>
+          <h3>➕ Cadastrar Nova Viagem Operacional</h3>
           <button (click)="definirTela('inicio')" style="background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">⬅️ Voltar</button>
         </div>
 
         <form #rotaForm="ngForm" (ngSubmit)="salvarNovaRota(rotaForm.value, rotaForm)" style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="display: flex; gap: 16px;">
-            <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569;">Cidade Origem:</label>
-              <input type="text" name="origem" ngModel required placeholder="Ex: Maceió" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-            </div>
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569;">UF Origem:</label>
-              <input type="text" name="ufOrigem" ngModel required maxlength="2" placeholder="AL" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
-            </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; color: #475569;">Selecione a Rota / Itinerário:</label>
+            <select name="rotaId" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+              <option value="" disabled selected>Escolha uma rota ativa...</option>
+              <option *ngFor="let rota of listaRotasDisponiveis" [value]="rota.id">
+                #{{ rota.id }} - {{ rota.origem }} ({{ rota.ufOrigem }}) ➔ {{ rota.destino }} ({{ rota.ufDestino }})
+              </option>
+            </select>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; color: #475569;">Selecione o Veículo Escalado:</label>
+            <select name="transportId" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+              <option value="" disabled selected>Escolha um veículo da frota...</option>
+              <option *ngFor="let transporte of listaTransportesDisponiveis" [value]="transporte.id">
+                #{{ transporte.id }} - {{ transporte.modelo }} (Placa: {{ transporte.placa || 'N/A' }})
+              </option>
+            </select>
           </div>
 
           <div style="display: flex; gap: 16px;">
-            <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569;">Cidade Destino:</label>
-              <input type="text" name="destino" ngModel required placeholder="Ex: Recife" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569;">Data e Horário de Saída:</label>
+              <input type="datetime-local" name="dataSaida" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569;">UF Destino:</label>
-              <input type="text" name="ufDestino" ngModel required maxlength="2" placeholder="PE" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 16px;">
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569;">Preço Base (R$):</label>
-              <input type="number" name="valorBase" ngModel required step="0.01" placeholder="80.00" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-            </div>
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569;">Horário de Saída:</label>
-              <input type="time" name="horarioPadrao" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+              <label style="font-weight: 600; color: #475569;">Capacidade Operacional:</label>
+              <input type="number" name="capacidade" ngModel required placeholder="Ex: 42" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
             </div>
           </div>
 
           <button type="submit" [disabled]="!rotaForm.valid" style="background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px;">
-            💾 Salvar Rota Operacional
+            💾 Agendar Nova Viagem
           </button>
         </form>
       </section>

@@ -59,23 +59,34 @@ public class ViagemServiceIMPL implements ViagemService {
         return v.stream().map(ViagemResponse::new).toList();
     }
 
+    @Transactional
     @Override
-    public ViagemResponse cadastrarViagem(ViagemRequest viagemRequest) {
-        Rotas rota = rotasRepository.findById(viagemRequest.rotaId())
-                .orElseThrow(()-> new RuntimeException("rota não encontrada"));
+    public ViagemResponse cadastrarViagem(ViagemRequest dados) {
 
 
-        Transport transport= transportRepository.findById(viagemRequest.transportId())
-                .orElseThrow(()-> new RuntimeException("transporte não encontrada"));
-        Viagem v = new Viagem();
-        v.setRota(rota);
-        v.setDataSaida(viagemRequest.dataSaida());
-        v.setTransport(transport);
-        v.setCapacidade(viagemRequest.capacidade());
-        v.setVagasDisponiveis(viagemRequest.vagasDisponiveis());
+        if (dados.rotaId() == null) {
+            throw new IllegalArgumentException("O ID da rota não pode ser nulo.");
+        }
+        Rotas rota = rotasRepository.findById(dados.rotaId())
+                .orElseThrow(() -> new RuntimeException("Rota não encontrada"));
 
-        viagemRepository.save(v);
-        return new  ViagemResponse(v);
+
+        if (dados.transportId() == null) {
+            throw new IllegalArgumentException("O ID do transporte não pode ser nulo.");
+        }
+
+        Transport transport = transportRepository.findById(dados.transportId())
+                .orElseThrow(() -> new RuntimeException("Veículo de transporte não encontrado"));
+
+
+        Viagem novaViagem = new Viagem();
+        novaViagem.setRota(rota);
+        novaViagem.setTransport(transport);
+        novaViagem.setDataSaida(dados.dataSaida());
+        novaViagem.setCapacidade(dados.capacidade());
+        novaViagem.setVagasDisponiveis(dados.vagasDisponiveis());
+        viagemRepository.save(novaViagem);
+        return new ViagemResponse(novaViagem);
     }
 
     @Override
