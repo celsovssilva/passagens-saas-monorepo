@@ -65,30 +65,42 @@
           </div>
           <button class="btn-primary" (click)="definirTela('cadastrar-rota')" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">➕ Cadastrar Nova Rota</button>
         </div>
-        <p class="table-subtitle">Lista de todas as rotas agendadas pelas empresas parceiras.</p>
+        <p class="table-subtitle">Monitoramento em tempo real de assentos, frotas e programações.</p>
 
         <div class="table-responsive">
           <table class="admin-table">
             <thead>
             <tr>
               <th>ID</th>
-              <th>Origem</th>
-              <th>Destino</th>
-              <th>Horário Padrão</th>
-              <th>Preço Base</th>
+              <th>Origem / Destino</th>
+              <th>Veículo Escalado</th>
+              <th>Vagas Disponíveis</th>
+              <th>Preço Passagem</th>
               <th>Ações</th>
             </tr>
             </thead>
             <tbody>
             <tr *ngFor="let viagem of listaViagens">
               <td><strong>#{{ viagem.id }}</strong></td>
-              <td>{{ viagem.origem }} ({{ viagem.ufOrigem }})</td>
-              <td>{{ viagem.destino }} ({{ viagem.ufDestino }})</td>
               <td>
-                <span class="time-badge">🕒 {{ viagem.horario || viagem.horarioFormatado || '00:00' }}</span>
+                <span>📍 {{ viagem.origem }} ({{ viagem.ufOrigem }})</span><br>
+                <span>🏁 {{ viagem.destino }} ({{ viagem.ufDestino }})</span><br>
+                <small class="time-badge" style="color: #64748b; font-size: 11px; display: inline-block; margin-top: 4px;">
+                  🕒 {{ viagem.dataSaida | date:'dd/MM/yyyy HH:mm' }}
+                </small>
               </td>
-              <td class="price-cell">
-                R$ {{ (viagem.valor || viagem.valorBase) | number:'1.2-2' }}
+              <td>
+                <span class="bus-model" style="font-weight: 500;">
+                  🚌 {{ viagem.transporteModelo || 'Não escalado' }}
+                </span>
+              </td>
+              <td>
+                <span [style.color]="viagem.vagasDisponiveis > 0 ? '#10b981' : '#ef4444'" style="font-weight: bold;">
+                  🪑 {{ viagem.vagasDisponiveis }} assentos livres
+                </span>
+              </td>
+              <td class="price-cell" style="font-weight: 600; color: #1e293b;">
+                R$ {{ viagem.valor | number:'1.2-2' }}
               </td>
               <td>
                 <button class="btn-action-delete" (click)="excluirViagem(viagem.id)" title="Excluir Viagem">
@@ -96,8 +108,11 @@
                 </button>
               </td>
             </tr>
-            <tr *ngIf="listaViagens.length === 0">
-              <td colspan="6" class="no-data">Nenhuma viagem cadastrada no sistema até o momento.</td>
+
+            <tr *ngIf="!listaViagens || listaViagens?.length === 0">
+              <td colspan="6" class="no-data" style="text-align: center; padding: 20px; color: #64748b; font-style: italic;">
+                Nenhuma viagem operacional ativa cadastrada no sistema.
+              </td>
             </tr>
             </tbody>
           </table>

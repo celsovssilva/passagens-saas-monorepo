@@ -1,138 +1,119 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // 👈 Essencial para o funcionamento do formulário
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { AuthService } from '../../service/auth.service';
+import { FormsModule, NgForm } from '@angular/forms'; // 👈 Importamos o FormsModule aqui
+import { CommonModule } from '@angular/common';       // 👈 Importamos o CommonModule para ngIf, ngFor, ngClass, pipes
+
+// 📦 ATENÇÃO: Importe o componente da Área do Passageiro aqui!
+// Verifique se o caminho do arquivo e o nome da classe estão corretos conforme o seu projeto.
+import { AreaPassageiroComponent } from '../area-passageiro/area-passageiro';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, FormsModule], // 👈 FormsModule adicionado aqui para não quebrar o build
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  standalone: true, // 👈 Garante que ele está marcado como Standalone
+  imports: [
+    CommonModule,             // Resolve: *ngIf, *ngFor, [ngClass], date, number
+    FormsModule,              // Resolve: #rotaForm="ngForm"
+    AreaPassageiroComponent   // Resolve: <app-area-passageiro>
+  ],
   templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css'
+  styleUrls: ['./dashboard.css']
 })
 export class DashboardComponent implements OnInit {
   telaAtiva: string = 'inicio';
   listaViagens: any[] = [];
 
-  usuarioLogado = {
+  usuarioLogado: any = {
     nome: 'Administrador',
-    email: 'admin@admin.com',
+    email: '',
     role: 'ADMIN'
   };
 
-  dadosGlobais = {
+  dadosGlobais: any = {
     totalPassageiros: 0,
     totalEmpresas: 0,
-    faturamentoHoje: 0
+    faturamentoHoje: 0.00
   };
 
-  constructor(
-    private http: HttpClient,
-    private authService: AuthService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    // Executa os dois carregamentos assim que a tela abre
-    this.carregarMetricasBanco();
-    this.carregarViagensAtivas();
-  }
-
-  private obterHeaders() {
-    const token = this.authService.getToken();
-    return {
-      headers: new HttpHeaders({
-        'Authorization': `Bearer ${token}`
-      })
-    };
-  }
-
-  carregarMetricasBanco() {
-    this.http.get<any>('http://localhost:8080/api/dashboard/estatisticas', this.obterHeaders()).subscribe({
-      next: (dados: any) => {
-        console.log('Dados do dashboard recebidos no TS:', dados);
-
-        if (dados) {
-          // Mantido exatamente a atribuição reativa que deu certo antes
-          this.dadosGlobais = {
-            totalPassageiros: Number(dados.totalPassageiros) || 0,
-            totalEmpresas: Number(dados.totalEmpresas) || 0,
-            faturamentoHoje: Number(dados.faturamentoHoje) || 0
-          };
-
-          this.cdr.detectChanges();
-        }
-      },
-      error: (err) => {
-        console.error('Erro ao carregar dados globais do dashboard:', err);
-      }
-    });
-  }
-
-  carregarViagensAtivas() {
-    // Busca os dados do seu endpoint do Java que lista todas as rotas fixas
-    this.http.get<any[]>('http://localhost:8080/api/rotas', this.obterHeaders()).subscribe({
-      next: (dados) => {
-        console.log('Rotas carregadas para a tabela:', dados);
-        this.listaViagens = dados || [];
-        this.cdr.detectChanges(); // Garante a renderização estável na tabela
-      },
-      error: (err) => {
-        console.error('Erro ao listar rotas no painel:', err);
-      }
-    });
-  }
-
-  // 🔥 Nova função para cadastrar a Rota enviando para o RotasController do Java
-  salvarNovaRota(dadosForm: any, formReference: any) {
-    let horarioOriginal = dadosForm.horarioPadrao;
-    if (horarioOriginal && horarioOriginal.split(':').length === 2) {
-      horarioOriginal = `${horarioOriginal}:00`; // Formata para LocalTime (HH:mm:ss)
+    const user = localStorage.getItem('usuario');
+    if (user) {
+      this.usuarioLogado = JSON.parse(user);
     }
 
-    const payload = {
-      origem: dadosForm.origem,
-      ufOrigem: dadosForm.ufOrigem ? dadosForm.ufOrigem.toUpperCase() : '',
-      destino: dadosForm.destino,
-      ufDestino: dadosForm.ufDestino ? dadosForm.ufDestino.toUpperCase() : '',
-      valorBase: Number(dadosForm.valorBase),
-      horarioPadrao: horarioOriginal
-    };
-
-    this.http.post<any>('http://localhost:8080/api/rotas/cadastrar', payload, this.obterHeaders()).subscribe({
-      next: () => {
-        alert('Nova rota operacional cadastrada com sucesso!');
-        formReference.reset();
-        this.carregarViagensAtivas(); // Atualiza a tabela por baixo
-        this.telaAtiva = 'inicio'; // Voltar para a tela inicial
-      },
-      error: (err) => {
-        console.error('Erro ao cadastrar rota:', err);
-        alert('Erro ao salvar nova rota. Verifique os dados fornecidos.');
-      }
-    });
+    this.carregarViagens();
+    this.carregarDadosGlobais();
   }
 
   definirTela(tela: string) {
     this.telaAtiva = tela;
   }
 
-  excluirViagem(idViagem: number) {
-    this.http.delete(`http://localhost:8080/api/viagem/deletar/${idViagem}`, this.obterHeaders()).subscribe({
-      next: () => {
-        this.carregarViagensAtivas();
+  obterHeaders() {
+    const token = localStorage.getItem('token');
+    return {
+      headers: new HttpHeaders({
+        'Authorization': token ? `Bearer ${token}` : ''
+      })
+    };
+  }
+
+  carregarViagens() {
+    this.http.get<any[]>('http://localhost:8080/api/viagem/listar-todas', this.obterHeaders()).subscribe({
+      next: (dados) => {
+        this.listaViagens = [...dados];
+        console.log('Viagens reais carregadas para a tabela:', this.listaViagens);
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Erro ao deletar:', err);
+        console.error('Erro ao carregar viagens dinâmicas:', err);
+      }
+    });
+  }
+
+  carregarDadosGlobais() {
+    this.http.get<any>('http://localhost:8080/api/dashboard/dados', this.obterHeaders()).subscribe({
+      next: (dados) => {
+        this.dadosGlobais = dados;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erro ao carregar dados do dashboard:', err);
+      }
+    });
+  }
+
+  excluirViagem(idViagem: number) {
+    if (confirm('Tem a certeza que deseja excluir esta viagem operacional?')) {
+      this.http.delete(`http://localhost:8080/api/viagem/deletar/${idViagem}`, this.obterHeaders()).subscribe({
+        next: () => {
+          console.log('Viagem apagada com sucesso da base de dados!');
+          this.carregarViagens();
+        },
+        error: (err) => {
+          console.error('Erro ao apagar viagem:', err);
+        }
+      });
+    }
+  }
+
+  salvarNovaRota(dadosForm: any, form: NgForm) {
+    this.http.post('http://localhost:8080/api/viagem/cadastrar', dadosForm, this.obterHeaders()).subscribe({
+      next: (res) => {
+        console.log('Nova rota/viagem criada:', res);
+        form.resetForm();
+        this.definirTela('inicio');
+        this.carregarViagens();
+      },
+      error: (err) => {
+        console.error('Erro ao cadastrar rota:', err);
       }
     });
   }
 
   logout() {
-    this.authService.logout();
+    localStorage.clear();
+    window.location.reload();
   }
 }

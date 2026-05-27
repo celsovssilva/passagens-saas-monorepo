@@ -50,4 +50,8 @@ public class ViagemController {
                                                           LocalDateTime data){
         return ResponseEntity.ok(viagemService.buscarViagem(origem, destino, data));
     }
+    @GetMapping("/listar-todas")
+    public ResponseEntity<List<ViagemResponse>> listarTodasViagens() {
+        return ResponseEntity.ok(viagemService.listarTodasAsViagensRealizadas());
+    }
 }

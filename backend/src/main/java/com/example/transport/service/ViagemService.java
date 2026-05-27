@@ -17,6 +17,6 @@ public interface ViagemService {
      ViagemResponse cadastrarViagem(ViagemRequest viagemRequest);
      List<PassageiroResponse> buscarPassageirosporViagem(Long viagemId);
      void deleteViagem(Long idViagem);
-
+     List<ViagemResponse>listarTodasAsViagensRealizadas();
      List<ViagemResponse> buscarViagem(String origem, String destino, LocalDateTime data);
 }

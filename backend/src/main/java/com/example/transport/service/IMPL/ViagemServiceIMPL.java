@@ -101,6 +101,13 @@ public class ViagemServiceIMPL implements ViagemService {
     }
 
     @Override
+    public List<ViagemResponse> listarTodasAsViagensRealizadas() {
+        List<Viagem> v = viagemRepository.findAll();
+
+        return v.stream().map(ViagemResponse::new).toList();
+    }
+
+    @Override
     public List<ViagemResponse> buscarViagem(String origem, String destino, LocalDateTime data) {
         List<Viagem> viagensEncontradas = viagemRepository.buscarPorDataERota(origem,destino,data);
         return viagensEncontradas.stream()

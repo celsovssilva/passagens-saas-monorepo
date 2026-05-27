@@ -62,7 +62,7 @@ public class SecurityConfigurations {
                     req.requestMatchers(HttpMethod.GET,"api/viagem/buscar/{id}").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/viagem/pesquisar").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/viagem/listar-passageiros/{viagemId}").authenticated();
-
+                    req.requestMatchers(HttpMethod.GET,"api/viagem/listar-todas").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/rotas").authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
