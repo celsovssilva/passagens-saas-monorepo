@@ -101,13 +101,23 @@ public class CompraServiceIMPL implements CompraService {
     public void confirmarPagamento(Long idCompra) {
         Compra c = compraRepository.findById(idCompra)
                 .orElseThrow(() -> new RuntimeException("compra inexistente"));
-        if(!c.getStatus().equals(StatusPagamento.PENDENTE)) {
-            throw  new RuntimeException("Operação inválida. O status atual é" + StatusPagamento.CANCELADO);
-        }
-        c.setStatus(StatusPagamento.APROVADO);
 
+        if(!c.getStatus().equals(StatusPagamento.PENDENTE)) {
+            throw new RuntimeException("Operação inválida. O status atual é " + StatusPagamento.CANCELADO);
+        }
+
+        c.setStatus(StatusPagamento.APROVADO);
         Compra compraSalva = compraRepository.save(c);
+
+
         Viagem v = compraSalva.getPassagens().get(0).getViagem();
+
+
+        if (v.getVagasDisponiveis() <= 0) {
+            throw new RuntimeException("Não há mais assentos disponíveis para esta viagem!");
+        }
+        v.setVagasDisponiveis(v.getVagasDisponiveis() - 1);
+        viagemRepository.save(v);
         dispararMensagem(compraSalva, v, compraSalva.getUser());
     }
 
