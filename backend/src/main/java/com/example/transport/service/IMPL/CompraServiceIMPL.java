@@ -98,29 +98,46 @@ public class CompraServiceIMPL implements CompraService {
     }
 
     @Override
+    @Transactional
     public void confirmarPagamento(Long idCompra) {
-        Compra c = compraRepository.findById(idCompra)
-                .orElseThrow(() -> new RuntimeException("compra inexistente"));
+        Compra compra = compraRepository.findById(idCompra)
+                .orElseThrow(() -> new RuntimeException("Erro: Compra de ID #" + idCompra + " não foi encontrada."));
 
-        if(!c.getStatus().equals(StatusPagamento.PENDENTE)) {
-            throw new RuntimeException("Operação inválida. O status atual é " + StatusPagamento.CANCELADO);
+        String emailAutenticadoNoToken = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User usuarioReal = userRepository.findByEmail(emailAutenticadoNoToken)
+                .orElseThrow(() -> new RuntimeException("Usuário do token não localizado."));
+
+        compra.setUser(usuarioReal);
+
+        Viagem v = compra.getViagem();
+
+        if (v == null && compra.getPassagens() != null && !compra.getPassagens().isEmpty()) {
+            v = compra.getPassagens().get(0).getViagem();
         }
 
-        c.setStatus(StatusPagamento.APROVADO);
-        Compra compraSalva = compraRepository.save(c);
-
-
-        Viagem v = compraSalva.getPassagens().get(0).getViagem();
-
-
-        if (v.getVagasDisponiveis() <= 0) {
-            throw new RuntimeException("Não há mais assentos disponíveis para esta viagem!");
+        if (v == null) {
+            throw new RuntimeException("Erro: Nenhuma viagem operacional está vinculada a esta compra.");
         }
-        v.setVagasDisponiveis(v.getVagasDisponiveis() - 1);
+
+        Integer vagasAtuais = v.getVagasDisponiveis();
+
+        if (vagasAtuais == null) {
+            vagasAtuais = v.getCapacidade();
+        }
+
+        if (vagasAtuais <= 0) {
+            throw new RuntimeException("Bloqueio de Emissão: Não existem assentos livres para a viagem #" + v.getId());
+        }
+
+        v.setVagasDisponiveis(vagasAtuais - 1);
         viagemRepository.save(v);
-        dispararMensagem(compraSalva, v, compraSalva.getUser());
-    }
 
+        compra.setStatus(StatusPagamento.APROVADO);
+        Compra compraSalva = compraRepository.save(compra);
+
+        dispararMensagem(compraSalva, v, usuarioReal);
+    }
     @Override
     public void cancelarCompra(Long compraId) {
         Compra compra = compraRepository.findById(compraId)

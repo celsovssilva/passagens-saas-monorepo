@@ -194,18 +194,18 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // =========================================================================
-  // LOGICA DO FLUXO DE COMPRAS E ATUALIZAÇÃO DE PAGAMENTO (INTEGRAÇÃO JAVA)
-  // =========================================================================
-
-  /**
-   * PASSO 1: Envia o POST para criar o registro da compra com status PENDENTE
-   */
   validarEAvancarFluxoCompra(dadosForm: any, form: NgForm) {
     if (form.invalid) return;
 
+    // Garantia de que vamos usar o ID do usuário que está logado de verdade
+    const idUsuarioEfetivo = this.usuarioLogado.id;
+
+    if (!idUsuarioEfetivo || idUsuarioEfetivo === 1) {
+      console.warn("Aviso: O ID do usuário logado veio como nulo ou 1. Verifique se o login foi feito com o Celso.");
+    }
+
     const compraRequestPayload = {
-      usuarioId: this.usuarioLogado.id || 1,
+      usuarioId: Number(idUsuarioEfetivo), // Força o ID dinâmico do Celso (8)
       viagemId: Number(dadosForm.viagemId),
       passageiro: [
         {
@@ -218,23 +218,19 @@ export class DashboardComponent implements OnInit {
       cvv: dadosForm.cvv || null
     };
 
-    // Guarda informações locais para renderizar o recibo no final
     this.backupHistoricoCompra = compraRequestPayload;
 
-    console.log('Passo 1: Registrando intenção de compra (Status: PENDENTE)...');
+    console.log('Passo 1: Registrando intenção de compra...', compraRequestPayload);
 
     this.http.post<any>('http://localhost:8080/api/compra/comprar', compraRequestPayload, this.obterHeaders()).subscribe({
       next: (compraSalvaNoBanco) => {
-        // Mapeia dinamicamente o ID retornado pelo banco
         this.idCompraPendente = compraSalvaNoBanco?.id || compraSalvaNoBanco?.idCompra || null;
         console.log('Compra gravada no banco! ID temporário:', this.idCompraPendente);
 
         if (dadosForm.metodo === 'PIX') {
-          // Se for PIX, muda para a tela do QR Code e aguarda a ação do usuário
           this.subTelaCompra = 'pix';
           this.cdr.detectChanges();
         } else {
-          // Se for Cartão de Crédito, já realiza a chamada do PUT imediatamente
           this.efetivarConfirmacaoPagamentoNoBackend(form);
         }
       },
