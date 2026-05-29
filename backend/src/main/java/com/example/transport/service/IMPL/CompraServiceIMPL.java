@@ -11,6 +11,7 @@ import com.example.transport.service.PdfService;
 import jakarta.transaction.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -47,7 +48,12 @@ public class CompraServiceIMPL implements CompraService {
         int quantidadeDePassagens = compra.passageiro().size();
         Double valorTotal = v.getRota().getValor() * quantidadeDePassagens;
 
-        if(quantidadeDePassagens > v.getCapacidade()) {
+
+        if (v.getVagasDisponiveis() == null) {
+            v.setVagasDisponiveis(v.getCapacidade());
+        }
+
+        if (quantidadeDePassagens > v.getVagasDisponiveis()) {
             throw new RuntimeException("Não há assentos suficientes");
         }
 
@@ -70,7 +76,6 @@ public class CompraServiceIMPL implements CompraService {
             return passagem;
         }).toList();
 
-
         compra1.setPassagens(passagens);
         compra1.setValor(v.getRota().getValor() * quantidadeDePassagens);
 
@@ -81,10 +86,12 @@ public class CompraServiceIMPL implements CompraService {
             compra1.setStatus(StatusPagamento.APROVADO);
         }
 
-        v.setCapacidade(v.getCapacidade() - quantidadeDePassagens);
+        v.setVagasDisponiveis(v.getVagasDisponiveis() - quantidadeDePassagens);
         viagemRepository.save(v);
+
         Compra compra2 = compraRepository.save(compra1);
         passagemRepository.saveAll(passagens);
+
         if (compra2.getStatus() == StatusPagamento.APROVADO) {
             dispararMensagem(compra2, v, comprador);
         }
@@ -119,20 +126,6 @@ public class CompraServiceIMPL implements CompraService {
         if (v == null) {
             throw new RuntimeException("Erro: Nenhuma viagem operacional está vinculada a esta compra.");
         }
-
-        Integer vagasAtuais = v.getVagasDisponiveis();
-
-        if (vagasAtuais == null) {
-            vagasAtuais = v.getCapacidade();
-        }
-
-        if (vagasAtuais <= 0) {
-            throw new RuntimeException("Bloqueio de Emissão: Não existem assentos livres para a viagem #" + v.getId());
-        }
-
-        v.setVagasDisponiveis(vagasAtuais - 1);
-        viagemRepository.save(v);
-
         compra.setStatus(StatusPagamento.APROVADO);
         Compra compraSalva = compraRepository.save(compra);
 
