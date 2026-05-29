@@ -1,378 +1,212 @@
-<aside class="sidebar">
-  <div class="user-profile-box">
-    <div class="user-info">
-      <p class="user-name">{{ usuarioLogado.nome }}</p>
-      <span class="badge" [ngClass]="usuarioLogado.role ? usuarioLogado.role.toLowerCase() : 's-perfil'">
-        {{ usuarioLogado.role || 'Sem Perfil' }}
-      </span>
+<div class="dashboard-container" style="font-family: sans-serif;">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h2>🚌 ClickBus Pro</h2>
     </div>
-  </div>
+    <nav class="sidebar-menu">
+      <a (click)="definirTela('inicio')" [class.active]="telaAtiva === 'inicio'">📊 Início / Painel</a>
+      <a (click)="definirTela('comprar')" [class.active]="telaAtiva === 'comprar'">🎟️ Comprar Passagem</a>
 
-  <nav class="nav-menu">
-    <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'inicio' || telaAtiva === 'cadastrar-rota' }" (click)="definirTela('inicio')">📊 Início</a>
-    <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'comprar' }" (click)="definirTela('comprar')" *ngIf="usuarioLogado.role === 'PASSAGEIRO'">🎫 Comprar Passagem</a>
-    <a href="javascript:void(0)" class="nav-item" [ngClass]="{ 'active': telaAtiva === 'frota' }" (click)="definirTela('frota')" *ngIf="usuarioLogado.role === 'EMPRESA' || usuarioLogado.role === 'ADMIN'">🚌 Minha Frota</a>
-  </nav>
+      <a *ngIf="usuarioLogado.role === 'ADMIN' || usuarioLogado.role === 'EMPRESA'"
+         (click)="definirTela('frota')" [class.active]="telaAtiva === 'frota'">
+        ⚙️ Gerenciar Frota
+      </a>
 
-  <button (click)="logout()" class="btn-logout">
-    <span>🚪</span> Sair do Sistema
-  </button>
-</aside>
+      <a (click)="logout()" class="menu-logout">🚪 Sair do Sistema</a>
+    </nav>
+  </aside>
 
-<main class="main-content">
-  <header class="content-header">
-    <h1>Painel de Controle</h1>
-    <p class="date">Conectado como: {{ usuarioLogado.email }}</p>
-  </header>
+  <main class="main-content" style="flex: 1; padding: 20px; background: #f8fafc;">
 
-  <div *ngIf="telaAtiva === 'inicio'">
-    <section class="card admin-card" *ngIf="usuarioLogado.role === 'ADMIN'">
-      <div class="card-header">
-        <span class="icon">📊</span>
-        <h3>Relatórios Globais do Sistema</h3>
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div>
+        <h1 style="margin: 0; font-size: 20px; color: #0f172a;">Olá, {{ usuarioLogado.nome }}</h1>
+        <small style="color: #64748b;">Acessando como nível: <strong style="color: #2563eb;">{{ usuarioLogado.role }}</strong></small>
       </div>
-      <p class="card-subtitle">Gerenciamento total de frotas, auditoria de usuários e fluxo financeiro geral.</p>
+      <div style="text-align: right;">
+        <span style="font-size: 14px; font-weight: bold; color: #334155;">{{ usuarioLogado.email }}</span>
+      </div>
+    </header>
 
-      <div class="stats-grid">
-        <div class="stat-box">
-          <span class="stat-value">{{ dadosGlobais.totalPassageiros }}</span>
-          <p class="stat-label">Passageiros</p>
+    <div *ngIf="telaAtiva === 'inicio'">
+      <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 4px solid #3b82f6;">
+          <small style="color: #64748b; font-weight: 600;">PASSAGEIROS ATENDIDOS</small>
+          <h2 style="margin: 8px 0 0 0; font-size: 28px;">{{ dadosGlobais.totalPassageiros }}</h2>
         </div>
-
-        <div class="stat-box">
-          <span class="stat-value">{{ dadosGlobais.totalEmpresas }}</span>
-          <p class="stat-label">Empresas</p>
+        <div style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 4px solid #10b981;">
+          <small style="color: #64748b; font-weight: 600;">EMPRESAS PARCEIRAS</small>
+          <h2 style="margin: 8px 0 0 0; font-size: 28px;">{{ dadosGlobais.totalEmpresas }}</h2>
         </div>
-
-        <div class="stat-box">
-          <span class="stat-value">R$ {{ dadosGlobais.faturamentoHoje | number:'1.2-2' }}</span>
-          <p class="stat-label">Vendas Hoje</p>
+        <div style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 4px solid #f59e0b;">
+          <small style="color: #64748b; font-weight: 600;">RECEITA OPERACIONAL</small>
+          <h2 style="margin: 8px 0 0 0; font-size: 28px;">R$ {{ dadosGlobais.faturamentoHoje | number:'1.2-2' }}</h2>
         </div>
       </div>
-    </section>
 
-    <section class="card admin-table-section">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <span class="icon">🗺️</span>
-          <h3 style="display: inline-block; margin-left: 8px;">Monitoramento de Viagens Ativas</h3>
+      <app-area-passageiro
+        (comprarPassagemEvent)="definirTela('comprar')"
+        (cancelarCompraEvent)="cancelarCompra($event)">
+      </app-area-passageiro>
+    </div>
+
+    <div *ngIf="telaAtiva === 'comprar'">
+      <div [ngSwitch]="subTelaCompra">
+
+        <div *ngSwitchCase="'formulario'" style="background: white; padding: 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <h2 style="margin-top: 0; margin-bottom: 20px;">🎟️ Solicitar Reserva de Assentos</h2>
+          <form #compraForm="ngForm" (ngSubmit)="validarEAvancarFluxoCompra(compraForm.value, compraForm)">
+            <div style="display: flex; flex-direction: column; gap: 16px; max-width: 500px;">
+
+              <label>Selecione a Viagem Operacional:</label>
+              <select name="viagemId" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <option value="" disabled selected>Escolha uma rota ativa...</option>
+                <option *ngFor="let v of listaViagens" [value]="v.id">
+                  Viagem #{{ v.id }} - De {{ v.origem }} para {{ v.destino }} ({{ v.vagasDisponiveis }} livres)
+                </option>
+              </select>
+
+              <label>Quantidade de Bilhetes:</label>
+              <input type="number" name="quantidade" [(ngModel)]="quantidadeSelecionada" (change)="gerarCamposPassageiros()" min="1" max="5" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+
+              <div *ngFor="let p of listaPassageirosForm; let i = index" style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 8px;">
+                <h4 style="margin: 0 0 8px 0;">Dados do Passageiro {{ i + 1 }}</h4>
+                <input type="text" [(ngModel)]="p.nome" name="nome_{{i}}" required placeholder="Nome Completo" style="width:95%; padding: 8px; margin-bottom: 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                <input type="text" [(ngModel)]="p.cpf" name="cpf_{{i}}" required placeholder="CPF" style="width:95%; padding: 8px; margin-bottom: 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                <input type="number" [(ngModel)]="p.numeroAssentos" name="assento_{{i}}" required placeholder="Nº Assento Preferencial" style="width:95%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+              </div>
+
+              <label style="margin-top: 12px;">Método de Pagamento:</label>
+              <select name="metodo" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <option value="CREDIT_CARD">💳 Cartão de Crédito</option>
+                <option value="PIX">⚡ Transferência PIX Instantânea</option>
+              </select>
+
+              <div style="display: flex; gap: 12px; margin-top: 10px;">
+                <button type="submit" [disabled]="!compraForm.valid" style="flex:1; background:#10b981; color:white; padding:12px; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">Avançar para Pagamento</button>
+                <button type="button" (click)="resetarEIrParaHome()" style="background:#64748b; color:white; padding:12px; border:none; border-radius:6px; cursor:pointer;">Cancelar</button>
+              </div>
+            </div>
+          </form>
         </div>
-        <button *ngIf="usuarioLogado.role === 'ADMIN'" class="btn-primary" (click)="definirTela('cadastrar-rota')" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">➕ Cadastrar Operações</button>
+
+        <div *ngSwitchCase="'pix'" style="background: white; padding: 30px; border-radius: 8px; text-align: center; max-width: 500px; margin: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <h3>⚡ Pagamento via PIX Dinâmico</h3>
+          <p>Para confirmar a compra, copie a chave de liquidação abaixo e pague no seu Internet Banking:</p>
+          <div style="background: #f8fafc; padding: 12px; font-family: monospace; border: 1px dashed #cbd5e1; border-radius: 6px; margin: 20px 0; word-break: break-all;">
+            00020126580014BR.GOV.BCB.PIX0136e4265a-e3d0-4bf0-a293-b1d7fae0c888520400005303986540562.005802BR5909CLICKBUS6007MACEIO62070503EX
+          </div>
+          <button (click)="confirmarEnvioTokenFake()" style="background:#2563eb; color:white; border:none; padding:10px 16px; border-radius:6px; cursor:pointer; margin-right: 8px;">📋 Copiar Código PIX</button>
+          <button (click)="dispararCompraParaServidor()" style="background:#10b981; color:white; border:none; padding:10px 16px; border-radius:6px; cursor:pointer;">✅ Confirmar Liquidação</button>
+        </div>
+
+        <div *ngSwitchCase="'sucesso'" style="background: white; padding: 40px; border-radius: 8px; text-align: center; max-width: 500px; margin: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <span style="font-size: 48px;">🎉</span>
+          <h2 style="color: #10b981; margin-top: 10px;">Aprovação Concluída!</h2>
+          <p style="color: #475569;">Sua passagem foi gerada com sucesso e integrada no banco de dados operacional.</p>
+          <button (click)="resetarEIrParaHome()" style="background:#2563eb; color:white; border:none; padding:12px 24px; font-weight:bold; border-radius:6px; cursor:pointer; margin-top: 16px;">Voltar ao Início</button>
+        </div>
+
       </div>
-      <p class="table-subtitle">Monitoramento em tempo real de assentos, frotas e programações.</p>
-      <div class="table-responsive">
-        <table class="admin-table">
-          <thead>
-          <tr>
-            <th>ID</th>
-            <th>Origem / Destino</th>
-            <th>Veículo Escalado</th>
-            <th>Vagas Disponíveis</th>
-            <th>Preço Passagem</th>
-            <th *ngIf="usuarioLogado.role === 'ADMIN'">Ações</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr *ngFor="let viagem of listaViagens">
-            <td><strong>#{{ viagem.id }}</strong></td>
-            <td>
-              <span>📍 {{ viagem.origem }} {{ viagem.ufOrigem ? '(' + viagem.ufOrigem + ')' : '' }}</span><br>
-              <span>🏁 {{ viagem.destino }} {{ viagem.ufDestino ? '(' + viagem.ufDestino + ')' : '' }}</span><br>
-              <small class="time-badge" style="color: #64748b; font-size: 11px; display: inline-block; margin-top: 4px;">
-                🕒 {{ viagem.dataSaida | date:'dd/MM/yyyy HH:mm' }}
-              </small>
-            </td>
-            <td>
-                <span class="bus-model" style="font-weight: 500;">
-                  🚌 {{ viagem.transporteModelo || viagem.transporte?.modelo || 'Veículo Escalado' }}
-                </span>
-            </td>
-            <td>
-                <span [style.color]="(viagem.vagasDisponiveis ?? viagem.capacidade ?? 0) > 0 ? '#10b981' : '#ef4444'" style="font-weight: bold;">
-                  🪑 {{ viagem.vagasDisponiveis ?? viagem.capacidade ?? 42 }} assentos livres
-                </span>
-            </td>
-            <td class="price-cell" style="font-weight: 600; color: #1e293b;">
-              R$ {{ (viagem.valor || viagem.valorBase || 0) | number:'1.2-2' }}
-            </td>
-            <td *ngIf="usuarioLogado.role === 'ADMIN'">
-              <button class="btn-action-delete" (click)="excluirViagem(viagem.id)" title="Excluir Viagem">
-                🗑️ Excluir
+    </div>
+
+    <div *ngIf="telaAtiva === 'frota'">
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+
+        <section style="max-width: 700px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+          <h3 style="margin-top: 0; margin-bottom: 8px; color: #1e293b;">🚌 Cadastrar Novo Veículo na Frota</h3>
+          <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">Insira os dados técnicos do transporte para realizar o cadastro via API.</p>
+
+          <form #frotaForm="ngForm" (ngSubmit)="salvarTransporte(frotaForm.value, frotaForm)" style="display: flex; flex-direction: column; gap: 16px;">
+
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+              <div style="flex: 2; min-width: 250px; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-weight: 600; color: #475569; font-size: 14px;">Modelo do Veículo:</label>
+                <input type="text" name="modelo" ngModel required placeholder="Ex: Mercedes-Benz G7 Leito" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+              </div>
+
+              <div style="flex: 1; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-weight: 600; color: #475569; font-size: 14px;">Capacidade (Vagas):</label>
+                <input type="number" name="capacidade" ngModel required min="1" placeholder="Ex: 42" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-weight: 600; color: #475569; font-size: 14px;">Status Operacional:</label>
+                <select name="status" [ngModel]="'ATIVO'" required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 40px;">
+                  <option value="ATIVO">✅ ATIVO</option>
+                  <option value="MANUTENCAO">🔧 MANUTENCAO</option>
+                  <option value="INATIVO">❌ INATIVO</option>
+                </select>
+              </div>
+
+              <div *ngIf="usuarioLogado?.role === 'ADMIN'" style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-weight: 600; color: #475569; font-size: 14px;">Vincular ID da Empresa:</label>
+                <select name="empresaId" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 40px;">
+                  <option value="" disabled selected>Selecione a empresa...</option>
+                  <option *ngFor="let emp of listaEmpresas" [value]="emp?.id">{{ emp?.nome || 'Empresa #' + emp?.id }}</option>
+                  <option value="1">Empresa Padrão (ID #1)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 8px;">
+              <button type="submit" [disabled]="!frotaForm.valid" style="flex: 1; background: #2563eb; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+                💾 Executar Cadastro (POST /api/transport/cadastrar)
               </button>
-            </td>
-          </tr>
-          <tr *ngIf="!listaViagens || listaViagens.length === 0">
-            <td colspan="6" class="no-data" style="text-align: center; padding: 20px; color: #64748b; font-style: italic;">
-              Nenhuma viagem operacional ativa cadastrada no sistema.
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card welcome-card">
-      <h3>Olá, {{ usuarioLogado.nome }}! 👋</h3>
-      <p>Você está conectado com o perfil: <strong>{{ usuarioLogado.role }}</strong>.</p>
-    </section>
-  </div>
-
-  <div *ngIf="telaAtiva === 'cadastrar-rota' && usuarioLogado.role === 'ADMIN'" style="display: flex; flex-direction: column; gap: 20px;">
-
-    <section class="card" style="max-width: 700px; margin-top: 20px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3>🗺️ Passo 1: Cadastrar Novo Itinerário (Rota com Preço)</h3>
-        <button (click)="cancelar()" style="background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">⬅️ Voltar</button>
-      </div>
-
-      <form #novaRotaForm="ngForm" (ngSubmit)="salvarItinerarioRota(novaRotaForm.value, novaRotaForm)" style="display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; gap: 16px;">
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">Cidade de Origem:</label>
-            <input type="text" name="origem" ngModel required placeholder="Ex: São Paulo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-          </div>
-          <div style="width: 80px; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">UF:</label>
-            <input type="text" name="ufOrigem" ngModel required maxLength="2" placeholder="SP" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 16px;">
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">Cidade de Destino:</label>
-            <input type="text" name="destino" ngModel required placeholder="Ex: Rio de Janeiro" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-          </div>
-          <div style="width: 80px; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">UF:</label>
-            <input type="text" name="ufDestino" ngModel required maxLength="2" placeholder="RJ" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 16px;">
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">Preço Base da Passagem (R$):</label>
-            <input type="number" name="valorBase" ngModel required step="0.01" min="0.01" placeholder="0.00" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-          </div>
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">Horário Padrão de Saída:</label>
-            <input type="time" name="horarioPadrao" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 12px;">
-          <button type="submit" [disabled]="!novaRotaForm.valid" style="flex: 1; background: #2563eb; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
-            💾 Registrar Itinerário e Definir Preço
-          </button>
-          <button type="button" (click)="cancelar()" style="background: #ef4444; color: white; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer;">
-            ❌ Cancelar
-          </button>
-        </div>
-      </form>
-    </section>
-
-    <section class="card" style="max-width: 700px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-      <h3>➕ Passo 2: Agendar Nova Viagem Operacional</h3>
-      <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Vincule um itinerário existente a um veículo da frota e defina a data específica de saída.</p>
-
-      <form #rotaForm="ngForm" (ngSubmit)="salvarNovaRota(rotaForm.value, rotaForm)" style="display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-weight: 600; color: #475569;">Selecione a Rota / Itinerário:</label>
-          <select name="rotaId" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-            <option value="" disabled selected>Escolha uma rota ativa...</option>
-            <option *ngFor="let rota of listaRotasDisponiveis" [value]="rota.id">
-              #{{ rota.id }} - {{ rota.origem }} ({{ rota.ufOrigem }}) ➔ {{ rota.destino }} ({{ rota.ufDestino }})
-            </option>
-          </select>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-weight: 600; color: #475569;">Selecione o Veículo Escalado:</label>
-          <select name="transportId" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-            <option value="" disabled selected>Escolha um veículo da frota...</option>
-            <option *ngFor="let transporte of listaTransportesDisponiveis" [value]="transporte.id">
-              #{{ transporte.id }} - {{ transporte.modelo }} (Placa: {{ transporte.placa || 'N/A' }})
-            </option>
-          </select>
-        </div>
-
-        <div style="display: flex; gap: 16px;">
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">Data e Horário de Saída:</label>
-            <input type="datetime-local" name="dataSaida" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-          </div>
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">Capacidade Operacional:</label>
-            <input type="number" name="capacidade" ngModel required placeholder="Ex: 42" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 12px;">
-          <button type="submit" [disabled]="!rotaForm.valid" style="flex: 1; background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
-            💾 Agendar Nova Viagem Operacional
-          </button>
-          <button type="button" (click)="cancelar()" style="background: #ef4444; color: white; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer;">
-            ❌ Cancelar
-          </button>
-        </div>
-      </form>
-    </section>
-  </div>
-
-  <div *ngIf="telaAtiva === 'comprar'">
-
-    <section class="card" *ngIf="subTelaCompra === 'formulario'" style="max-width: 700px; margin-top: 20px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-      <h3 style="margin-top: 0; margin-bottom: 16px; color: #1e293b; display: flex; align-items: center; gap: 6px;">🛒 Adquirir Nova Passagem</h3>
-
-      <form #formCompra="ngForm" (ngSubmit)="validarEAvancarFluxoCompra(formCompra.value, formCompra)" style="display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-weight: 600; color: #475569;">Selecione a Corrida/Viagem:</label>
-          <select name="viagemId" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-            <option value="" disabled selected>Escolha uma viagem operacional...</option>
-            <option *ngFor="let v of listaViagens" [value]="v.id">
-              #{{ v.id }} - {{ v.origem }} para {{ v.destino }} (Disponível: {{ v.vagasDisponiveis ?? v.capacidade ?? 42 }})
-            </option>
-          </select>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-weight: 600; color: #475569;">Quantidade de Passagens:</label>
-          <select name="quantidadePassagens" [(ngModel)]="quantidadeSelecionada" (change)="gerarCamposPassageiros()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-            <option [value]="1">1 Passagem</option>
-            <option [value]="2">2 Passagens</option>
-            <option [value]="3">3 Passagens</option>
-            <option [value]="4">4 Passagens</option>
-          </select>
-        </div>
-
-        <div *ngFor="let passageiro of listaPassageirosForm; let i = index" style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 12px;">
-          <h4 style="margin: 0; color: #1e293b;">Passageiro #{{ i + 1 }}</h4>
-
-          <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-            <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569; font-size: 13px;">Nome do Passageiro:</label>
-              <input type="text" name="nome_{{i}}" [(ngModel)]="passageiro.nome" required placeholder="Ex: Vania Maria" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
             </div>
-            <div style="flex: 1.5; min-width: 150px; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569; font-size: 13px;">CPF do Passageiro:</label>
-              <input type="text" name="cpf_{{i}}" [(ngModel)]="passageiro.cpf" required placeholder="Apenas números" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-            </div>
-            <div style="flex: 1; min-width: 100px; display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-weight: 600; color: #475569; font-size: 13px;">Nº Assento:</label>
-              <input type="number" name="assento_{{i}}" [(ngModel)]="passageiro.numeroAssentos" required min="1" max="50" placeholder="Cadeira" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-            </div>
+          </form>
+        </section>
+
+        <section style="background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; padding: 20px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 20px;">📋</span>
+            <h3 style="margin: 0; color: #1e293b;">Resultados Obtidos no Painel</h3>
           </div>
-        </div>
+          <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Dados recuperados através do seu endpoint estável de busca por ID.</p>
 
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-weight: 600; color: #475569;">Método de Pagamento:</label>
-          <select name="metodo" ngModel #metodoSelecionado="ngModel" required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-            <option value="" disabled selected>Escolha o método...</option>
-            <option value="PIX">⚡ PIX (Código dinâmico)</option>
-            <option value="CARTAO_CREDITO">💳 Cartão de Crédito (Aprovação imediata)</option>
-          </select>
-        </div>
-
-        <div *ngIf="metodoSelecionado.value === 'CARTAO_CREDITO'" style="display: flex; gap: 16px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-          <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569; font-size: 13px;">Número do Cartão:</label>
-            <input type="text" name="numeroCartao" ngModel required placeholder="0000 0000 0000 0000" style="padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+              <thead>
+              <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                <th style="padding: 12px; color: #475569; font-weight: 600;">Modelo de Ônibus</th>
+                <th style="padding: 12px; color: #475569; font-weight: 600;">Capacidade</th>
+                <th style="padding: 12px; color: #475569; font-weight: 600;">Situação Atual</th>
+                <th style="padding: 12px; color: #475569; font-weight: 600; text-align: center;">Ações</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr *ngFor="let f of listaFrota" style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 12px;">
+                  <span style="font-weight: 600; color: #1e293b;">🚌 {{ f?.modelo }}</span>
+                </td>
+                <td style="padding: 12px;">
+                  <strong>🪑 {{ f?.capacidade }}</strong> vagas mapeadas
+                </td>
+                <td style="padding: 12px;">
+                    <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e0f2fe; color: #0369a1;">
+                      {{ f?.status }}
+                    </span>
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                  <button type="button" (click)="deletarTransporte(f.id)" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                    🗑️ Deletar
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!listaFrota || listaFrota.length === 0">
+                <td colspan="4" style="text-align: center; padding: 30px; color: #64748b; font-style: italic; background: #fafafa;">
+                  Nenhum veículo retornado pelo microsserviço no momento.
+                </td>
+              </tr>
+              </tbody>
+            </table>
           </div>
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569; font-size: 13px;">CVV:</label>
-            <input type="text" name="cvv" ngModel required placeholder="123" maxLength="3" style="padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-          </div>
-        </div>
+        </section>
 
-        <div style="display: flex; gap: 12px; margin-top: 10px;">
-          <button type="submit" [disabled]="!formCompra.valid" style="flex: 1; background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 15px;">
-            {{ metodoSelecionado.value === 'PIX' ? '⚙️ Solicitar Chave PIX' : '🔒 Validar Pagamento e Finalizar' }}
-          </button>
-          <button type="button" (click)="cancelar()" style="background: #ef4444; color: white; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 15px;">
-            ❌ Cancelar
-          </button>
-        </div>
-      </form>
-    </section>
-
-    <section class="card" *ngIf="subTelaCompra === 'pix'" style="max-width: 480px; margin-top: 20px; padding: 32px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center;">
-      <div style="color: #10b981; font-size: 44px; margin-bottom: 8px;">⚡</div>
-      <h3 style="margin-top: 0; margin-bottom: 6px; color: #0f172a;">Aguardando Pagamento PIX</h3>
-      <p style="color: #64748b; font-size: 13px; margin-bottom: 24px;">Após efetuar o envio no seu aplicativo bancário, clique no botão de validação abaixo para liberar a sua passagem.</p>
-
-      <div style="background: #f1f5f9; width: 170px; height: 170px; margin: 0 auto 20px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px solid #cbd5e1; border-radius: 6px; position: relative;">
-        <span style="font-size: 70px; opacity: 0.1;">📱</span>
-        <div style="position: absolute; width: 130px; height: 130px; border: 4px solid #0f172a; display: flex; flex-wrap: wrap;">
-          <div style="width: 35px; height: 35px; background: #0f172a; margin: 4px;"></div>
-          <div style="width: 20px; height: 20px; background: #0f172a; margin-left: 45px; margin-top: 4px;"></div>
-          <div style="width: 35px; height: 35px; background: #0f172a; margin-top: 40px; margin-left: 4px;"></div>
-        </div>
       </div>
-
-      <div style="text-align: left; margin-bottom: 24px;">
-        <label style="font-weight: 600; color: #475569; font-size: 12px;">Código Copia e Cola:</label>
-        <div style="display: flex; gap: 8px; margin-top: 4px;">
-          <input type="text" readonly value="00020101021226830014br.gov.bcb.pix0136e39b23b2-2423-80aa-9png54041.00" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-family: monospace; font-size: 11px; color: #64748b;">
-          <button type="button" (click)="confirmarEnvioTokenFake()" style="background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">📋</button>
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <button type="button" (click)="dispararCompraParaServidor()" style="background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px;">
-          🔗 Confirmar Pagamento do PIX
-        </button>
-        <div style="display: flex; gap: 10px;">
-          <button type="button" (click)="subTelaCompra = 'formulario'" style="flex: 1; background: transparent; color: #64748b; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; cursor: pointer;">
-            Voltar ao formulário
-          </button>
-          <button type="button" (click)="cancelar()" style="flex: 1; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">
-            ❌ Cancelar Compra
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <section class="card" *ngIf="subTelaCompra === 'sucesso'" style="max-width: 550px; margin-top: 20px; padding: 32px; background: white; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); text-align: center; border-top: 6px solid #10b981;">
-      <div style="width: 56px; height: 56px; background: #d1fae5; color: #10b981; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 14px auto; font-size: 28px; font-weight: bold;">
-        ✓
-      </div>
-      <h3 style="margin-top: 0; margin-bottom: 6px; color: #065f46; font-size: 21px;">Pagamento Confirmado! 🎉</h3>
-      <p style="color: #047857; font-weight: 500; font-size: 14px; margin-bottom: 24px;">Sua transação foi aprovada com sucesso na rede bancária.</p>
-
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; margin-bottom: 24px; font-size: 13px; color: #334155; display: flex; flex-direction: column; gap: 10px;">
-        <div *ngFor="let passageiro of backupHistoricoCompra?.passageiro; let idx = index" style="border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
-          <p style="margin: 0 0 4px 0; display: flex; justify-content: space-between;">
-            <strong>Ticket #{{ idx + 1 }} Passageiro:</strong> <span>{{ passageiro.nome }}</span>
-          </p>
-          <p style="margin: 0 0 4px 0; display: flex; justify-content: space-between;">
-            <strong>CPF / Assento Escolhido:</strong> <span>{{ passageiro.cpf }} | Poltrona: {{ passageiro.numeroAssentos }}</span>
-          </p>
-        </div>
-        <p style="margin: 0; display: flex; justify-content: space-between;">
-          <strong>Total Vagas Adquiridas:</strong> <span>{{ backupHistoricoCompra?.passageiro?.length }} assento(s)</span>
-        </p>
-        <p style="margin: 0; display: flex; justify-content: space-between;">
-          <strong>Modalidade Pago:</strong> <span style="background: #cbd5e1; color: #1e293b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">{{ backupHistoricoCompra?.metodo }}</span>
-        </p>
-        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 4px 0;">
-        <p style="margin: 0; color: #2563eb; font-weight: 500; text-align: center; line-height: 1.5;">
-          ✉️ Bilhetes Eletrônicos e Vouchers despachados para: <br>
-          <strong style="color: #0f172a; font-size: 14px;">{{ usuarioLogado.email }}</strong>
-        </p>
-      </div>
-
-      <button type="button" (click)="resetarEIrParaHome()" style="background: #2563eb; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 15px; width: 100%;">
-        Confirmar e Voltar ao Início
-      </button>
-    </section>
-
-    <div style="margin-top: 20px;">
-      <app-area-passageiro [emailUsuario]="usuarioLogado.email" (passagemComprada)="onPassagemComprada($event)"></app-area-passageiro>
     </div>
-  </div>
 
-  <div *ngIf="telaAtiva === 'frota'">
-    <section class="card">
-      <h3>Gerenciamento da Frota</h3>
-      <p>Área destinada ao cadastro de ônibus e rotas da empresa.</p>
-    </section>
-  </div>
-</main>
+  </main>
+</div>

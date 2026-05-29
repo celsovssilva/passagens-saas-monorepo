@@ -22,9 +22,12 @@ export class DashboardComponent implements OnInit {
   listaViagens: any[] = [];
   listaRotasDisponiveis: any[] = [];
   listaTransportesDisponiveis: any[] = [];
+  listaFrota: any[] = [];
+  listaEmpresas: any[] = [];
 
   usuarioLogado: any = {
     id: null,
+    empresaId: null,
     nome: 'Usuário',
     email: 'Não identificado',
     role: 'PASSAGEIRO'
@@ -53,6 +56,7 @@ export class DashboardComponent implements OnInit {
         console.log('Dados extraídos do Token JWT com sucesso:', payloadDecodificado);
 
         this.usuarioLogado.id = payloadDecodificado.id || payloadDecodificado.userId || 1;
+        this.usuarioLogado.empresaId = payloadDecodificado.empresaId || null;
         this.usuarioLogado.email = payloadDecodificado.sub || payloadDecodificado.email || 'Não identificado';
         this.usuarioLogado.nome = payloadDecodificado.nome || this.usuarioLogado.email.split('@')[0];
 
@@ -99,6 +103,9 @@ export class DashboardComponent implements OnInit {
       this.quantidadeSelecionada = 1;
       this.gerarCamposPassageiros();
     }
+    if (tela === 'frota') {
+      this.obterDadosDaFrota();
+    }
   }
 
   obterHeaders() {
@@ -110,13 +117,87 @@ export class DashboardComponent implements OnInit {
     };
   }
 
+  obterDadosDaFrota() {
+    const idParaExibicao = 1;
+    this.http.get<any>(`http://localhost:8080/api/transport/buscar/${idParaExibicao}`, this.obterHeaders()).subscribe({
+      next: (dado: any) => {
+        if (dado) {
+          this.listaFrota = [{
+            id: idParaExibicao,
+            modelo: dado.modelo || 'Não Informado',
+            capacidade: dado.capacidade || 0,
+            status: dado.status || 'ATIVO'
+          }];
+        } else {
+          this.listaFrota = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Erro ao buscar transporte via ID estável:', err);
+        this.listaFrota = [];
+        this.cdr.detectChanges();
+      }
+    });
+
+    if (this.usuarioLogado?.role === 'ADMIN') {
+      this.http.get<any[]>('http://localhost:8080/api/empresa/listar-todas', this.obterHeaders()).subscribe({
+        next: (dados) => {
+          this.listaEmpresas = Array.isArray(dados) ? dados : [];
+          this.cdr.detectChanges();
+        },
+        error: (e) => {
+          this.listaEmpresas = [];
+        }
+      });
+    }
+  }
+
+  salvarTransporte(dadosForm: any, form: NgForm) {
+    if (form.invalid) return;
+
+    const transportPayload = {
+      modelo: dadosForm.modelo,
+      capacidade: Number(dadosForm.capacidade),
+      status: dadosForm.status,
+      empresaId: this.usuarioLogado.role === 'EMPRESA' ? Number(this.usuarioLogado.empresaId) : Number(dadosForm.empresaId || 1)
+    };
+
+    this.http.post('http://localhost:8080/api/transport/cadastrar', transportPayload, this.obterHeaders()).subscribe({
+      next: (res: any) => {
+        form.resetForm({ status: 'ATIVO' });
+        this.obterDadosDaFrota();
+        this.carregarRotasETransportes();
+        alert(`Veículo cadastrado com sucesso!`);
+      },
+      error: (err: any) => {
+        console.error('Erro ao cadastrar veículo:', err);
+        alert('Erro ao enviar dados do veículo para o servidor.');
+      }
+    });
+  }
+
+  deletarTransporte(id: number) {
+    if (confirm('Deseja realmente deletar este transporte?')) {
+      this.http.delete(`http://localhost:8080/api/transport/deletar/${id}`, this.obterHeaders()).subscribe({
+        next: () => {
+          this.obterDadosDaFrota();
+          this.carregarRotasETransportes();
+          alert('Transporte removido com sucesso.');
+        },
+        error: (err: any) => console.error(err)
+      });
+    }
+  }
+
+  // RESTAURADO: Mantendo sua lógica original baseada no seu endpoint funcional de rotas/viagens
   carregarViagens() {
     this.http.get<any[]>('http://localhost:8080/api/viagem/listar-todas', this.obterHeaders()).subscribe({
       next: (dados: any) => {
-        this.listaViagens = [...dados];
+        this.listaViagens = Array.isArray(dados) ? dados : [];
         this.cdr.detectChanges();
       },
-      error: (err: any) => console.error('Erro ao carregar viagens:', err)
+      error: (err: any) => console.error('Erro ao carregar rotas no feed de viagens:', err)
     });
   }
 
@@ -231,11 +312,6 @@ export class DashboardComponent implements OnInit {
     if (form.invalid) return;
 
     const idUsuarioEfetivo = this.usuarioLogado.id;
-
-    if (!idUsuarioEfetivo || idUsuarioEfetivo === 1) {
-      console.warn("Aviso: O ID do usuário logado veio como nulo ou 1. Verifique se o login foi feito com o Celso.");
-    }
-
     const totalPassagens = Number(this.quantidadeSelecionada);
 
     const compraRequestPayload = {
@@ -254,12 +330,9 @@ export class DashboardComponent implements OnInit {
 
     this.backupHistoricoCompra = compraRequestPayload;
 
-    console.log('Passo 1: Registrando intenção de compra...', compraRequestPayload);
-
     this.http.post<any>('http://localhost:8080/api/compra/comprar', compraRequestPayload, this.obterHeaders()).subscribe({
       next: (compraSalvaNoBanco: any) => {
         this.idCompraPendente = compraSalvaNoBanco?.id || compraSalvaNoBanco?.idCompra || null;
-        console.log('Compra gravada no banco! ID temporário:', this.idCompraPendente);
 
         if (dadosForm.metodo === 'PIX') {
           this.subTelaCompra = 'pix';
@@ -285,25 +358,17 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    console.log(`Passo 2: Enviando PUT para confirmar pagamento da compra #${this.idCompraPendente}...`);
-
     this.http.put(`http://localhost:8080/api/compra/atualizar/${this.idCompraPendente}`, {}, this.obterHeaders()).subscribe({
       next: () => {
-        console.log('Pagamento Aprovado e Mensagem/E-mail disparada pelo Backend!');
-
-        if (form) {
-          form.resetForm();
-        }
-
+        if (form) form.resetForm();
         this.subTelaCompra = 'sucesso';
-
         this.carregarViagens();
         this.carregarDadosGlobais();
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.error('Erro ao efetuar o PUT de confirmação:', err);
-        alert('Falha na aprovação do pagamento. Verifique os logs do servidor Java.');
+        alert('Falha na aprovação do pagamento.');
       }
     });
   }
@@ -325,9 +390,17 @@ export class DashboardComponent implements OnInit {
     this.resetarEIrParaHome();
   }
 
-  cancelarCompra(idCompra: number): void {
+  // CORRIGIDO (any): Aceita o objeto de evento sem causar incompatibilidade com o TS
+  cancelarCompra(eventoCompra: any): void {
+    const idEfetivo = eventoCompra?.id || eventoCompra?.idCompra || eventoCompra;
+
+    if (!idEfetivo || isNaN(Number(idEfetivo))) {
+      console.log('Nenhum ID detectado para cancelamento:', eventoCompra);
+      return;
+    }
+
     if (confirm('Tem certeza que deseja cancelar esta passagem/reserva?')) {
-      this.http.delete(`http://localhost:8080/api/compra/deletar/${idCompra}`, this.obterHeaders()).subscribe({
+      this.http.delete(`http://localhost:8080/api/compra/deletar/${Number(idEfetivo)}`, this.obterHeaders()).subscribe({
         next: () => {
           alert('Passagem/Compra cancelada com sucesso!');
           this.carregarViagens();
@@ -335,7 +408,7 @@ export class DashboardComponent implements OnInit {
         },
         error: (err: any) => {
           console.error('Erro ao cancelar passagem no servidor:', err);
-          alert('Não foi possível processar o cancelamento. Verifique as regras de negócio.');
+          alert('Não foi possível processar o cancelamento.');
         }
       });
     }
