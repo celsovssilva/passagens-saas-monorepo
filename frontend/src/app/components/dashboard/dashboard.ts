@@ -112,15 +112,15 @@ export class DashboardComponent implements OnInit {
 
   carregarViagens() {
     this.http.get<any[]>('http://localhost:8080/api/viagem/listar-todas', this.obterHeaders()).subscribe({
-      next: (dados) => {
+      next: (dados: any) => {
         this.listaViagens = [...dados];
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Erro ao carregar viagens:', err)
+      error: (err: any) => console.error('Erro ao carregar viagens:', err)
     });
   }
 
-  onPassagemComprada(sucesso: boolean) {
+  onPassagemComprada(sucesso: any) {
     if (sucesso) {
       this.carregarViagens();
       this.carregarDadosGlobais();
@@ -129,30 +129,30 @@ export class DashboardComponent implements OnInit {
 
   carregarRotasETransportes() {
     this.http.get<any[]>('http://localhost:8080/api/rotas', this.obterHeaders()).subscribe({
-      next: (dados) => {
+      next: (dados: any) => {
         this.listaRotasDisponiveis = dados;
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Erro ao buscar rotas:', err)
+      error: (err: any) => console.error('Erro ao buscar rotas:', err)
     });
 
     const idTransportePadrao = 1;
     this.http.get<any>(`http://localhost:8080/api/transport/buscar/${idTransportePadrao}`, this.obterHeaders()).subscribe({
-      next: (dado) => {
+      next: (dado: any) => {
         this.listaTransportesDisponiveis = Array.isArray(dado) ? dado : [dado];
         this.cdr.detectChanges();
       },
-      error: (err) => console.error(`Erro ao buscar transporte ID ${idTransportePadrao}:`, err)
+      error: (err: any) => console.error(`Erro ao buscar transporte ID ${idTransportePadrao}:`, err)
     });
   }
 
   carregarDadosGlobais() {
     this.http.get<any>('http://localhost:8080/api/dashboard/estatisticas', this.obterHeaders()).subscribe({
-      next: (dados) => {
+      next: (dados: any) => {
         this.dadosGlobais = dados;
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Erro ao carregar dados globais:', err)
+      error: (err: any) => console.error('Erro ao carregar dados globais:', err)
     });
   }
 
@@ -160,7 +160,7 @@ export class DashboardComponent implements OnInit {
     if (confirm('Tem a certeza que deseja excluir esta viagem operacional?')) {
       this.http.delete(`http://localhost:8080/api/viagem/deletar/${idViagem}`, this.obterHeaders()).subscribe({
         next: () => this.carregarViagens(),
-        error: (err) => console.error('Erro ao apagar viagem:', err)
+        error: (err: any) => console.error('Erro ao apagar viagem:', err)
       });
     }
   }
@@ -184,7 +184,7 @@ export class DashboardComponent implements OnInit {
         this.definirTela('inicio');
         alert('Rota e preço base cadastrados com sucesso!');
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error(err);
         alert('Erro ao cadastrar a rota. Verifique as restrições do sistema.');
       }
@@ -213,7 +213,7 @@ export class DashboardComponent implements OnInit {
         this.definirTela('inicio');
         this.carregarViagens();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Erro ao cadastrar rota:', err);
         alert('Erro ao salvar viagem.');
       }
@@ -257,7 +257,7 @@ export class DashboardComponent implements OnInit {
     console.log('Passo 1: Registrando intenção de compra...', compraRequestPayload);
 
     this.http.post<any>('http://localhost:8080/api/compra/comprar', compraRequestPayload, this.obterHeaders()).subscribe({
-      next: (compraSalvaNoBanco) => {
+      next: (compraSalvaNoBanco: any) => {
         this.idCompraPendente = compraSalvaNoBanco?.id || compraSalvaNoBanco?.idCompra || null;
         console.log('Compra gravada no banco! ID temporário:', this.idCompraPendente);
 
@@ -268,7 +268,7 @@ export class DashboardComponent implements OnInit {
           this.efetivarConfirmacaoPagamentoNoBackend(form);
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Erro ao processar o POST inicial de compra:', err);
         alert('Não foi possível registrar a intenção de compra.');
       }
@@ -301,7 +301,7 @@ export class DashboardComponent implements OnInit {
         this.carregarDadosGlobais();
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Erro ao efetuar o PUT de confirmação:', err);
         alert('Falha na aprovação do pagamento. Verifique os logs do servidor Java.');
       }
@@ -319,6 +319,26 @@ export class DashboardComponent implements OnInit {
     this.quantidadeSelecionada = 1;
     this.gerarCamposPassageiros();
     this.definirTela('inicio');
+  }
+
+  cancelar(): void {
+    this.resetarEIrParaHome();
+  }
+
+  cancelarCompra(idCompra: number): void {
+    if (confirm('Tem certeza que deseja cancelar esta passagem/reserva?')) {
+      this.http.delete(`http://localhost:8080/api/compra/deletar/${idCompra}`, this.obterHeaders()).subscribe({
+        next: () => {
+          alert('Passagem/Compra cancelada com sucesso!');
+          this.carregarViagens();
+          this.carregarDadosGlobais();
+        },
+        error: (err: any) => {
+          console.error('Erro ao cancelar passagem no servidor:', err);
+          alert('Não foi possível processar o cancelamento. Verifique as regras de negócio.');
+        }
+      });
+    }
   }
 
   logout() {

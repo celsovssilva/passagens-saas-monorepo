@@ -110,7 +110,7 @@ public class CompraServiceIMPL implements CompraService {
         Compra compra = compraRepository.findById(idCompra)
                 .orElseThrow(() -> new RuntimeException("Erro: Compra de ID #" + idCompra + " não foi encontrada."));
 
-        String emailAutenticadoNoToken = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        String emailAutenticadoNoToken = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User usuarioReal = userRepository.findByEmail(emailAutenticadoNoToken)
                 .orElseThrow(() -> new RuntimeException("Usuário do token não localizado."));

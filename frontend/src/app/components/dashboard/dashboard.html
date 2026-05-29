@@ -122,7 +122,7 @@
     <section class="card" style="max-width: 700px; margin-top: 20px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h3>🗺️ Passo 1: Cadastrar Novo Itinerário (Rota com Preço)</h3>
-        <button (click)="definirTela('inicio')" style="background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">⬅️ Voltar</button>
+        <button (click)="cancelar()" style="background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">⬅️ Voltar</button>
       </div>
 
       <form #novaRotaForm="ngForm" (ngSubmit)="salvarItinerarioRota(novaRotaForm.value, novaRotaForm)" style="display: flex; flex-direction: column; gap: 16px;">
@@ -159,9 +159,14 @@
           </div>
         </div>
 
-        <button type="submit" [disabled]="!novaRotaForm.valid" style="background: #2563eb; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
-          💾 Registrar Itinerário e Definir Preço
-        </button>
+        <div style="display: flex; gap: 12px;">
+          <button type="submit" [disabled]="!novaRotaForm.valid" style="flex: 1; background: #2563eb; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+            💾 Registrar Itinerário e Definir Preço
+          </button>
+          <button type="button" (click)="cancelar()" style="background: #ef4444; color: white; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+            ❌ Cancelar
+          </button>
+        </div>
       </form>
     </section>
 
@@ -200,9 +205,14 @@
           </div>
         </div>
 
-        <button type="submit" [disabled]="!rotaForm.valid" style="background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
-          💾 Agendar Nova Viagem Operacional
-        </button>
+        <div style="display: flex; gap: 12px;">
+          <button type="submit" [disabled]="!rotaForm.valid" style="flex: 1; background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+            💾 Agendar Nova Viagem Operacional
+          </button>
+          <button type="button" (click)="cancelar()" style="background: #ef4444; color: white; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+            ❌ Cancelar
+          </button>
+        </div>
       </form>
     </section>
   </div>
@@ -272,9 +282,14 @@
           </div>
         </div>
 
-        <button type="submit" [disabled]="!formCompra.valid" style="background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; font-size: 15px;">
-          {{ metodoSelecionado.value === 'PIX' ? '⚙️ Solicitar Chave PIX' : '🔒 Validar Pagamento e Finalizar' }}
-        </button>
+        <div style="display: flex; gap: 12px; margin-top: 10px;">
+          <button type="submit" [disabled]="!formCompra.valid" style="flex: 1; background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 15px;">
+            {{ metodoSelecionado.value === 'PIX' ? '⚙️ Solicitar Chave PIX' : '🔒 Validar Pagamento e Finalizar' }}
+          </button>
+          <button type="button" (click)="cancelar()" style="background: #ef4444; color: white; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 15px;">
+            ❌ Cancelar
+          </button>
+        </div>
       </form>
     </section>
 
@@ -304,9 +319,14 @@
         <button type="button" (click)="dispararCompraParaServidor()" style="background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px;">
           🔗 Confirmar Pagamento do PIX
         </button>
-        <button type="button" (click)="subTelaCompra = 'formulario'" style="background: transparent; color: #64748b; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; cursor: pointer;">
-          Voltar ao formulário
-        </button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" (click)="subTelaCompra = 'formulario'" style="flex: 1; background: transparent; color: #64748b; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; cursor: pointer;">
+            Voltar ao formulário
+          </button>
+          <button type="button" (click)="cancelar()" style="flex: 1; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+            ❌ Cancelar Compra
+          </button>
+        </div>
       </div>
     </section>
 
@@ -344,8 +364,8 @@
       </button>
     </section>
 
-    <div *ngIf="subTelaCompra === 'formulario'" style="margin-top: 20px;">
-      <app-area-passageiro [emailUsuario]="usuarioLogado.email"></app-area-passageiro>
+    <div style="margin-top: 20px;">
+      <app-area-passageiro [emailUsuario]="usuarioLogado.email" (passagemComprada)="onPassagemComprada($event)"></app-area-passageiro>
     </div>
   </div>
 
