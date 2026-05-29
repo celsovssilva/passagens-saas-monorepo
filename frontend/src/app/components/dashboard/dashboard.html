@@ -57,7 +57,7 @@
           <span class="icon">🗺️</span>
           <h3 style="display: inline-block; margin-left: 8px;">Monitoramento de Viagens Ativas</h3>
         </div>
-        <button *ngIf="usuarioLogado.role === 'ADMIN'" class="btn-primary" (click)="definirTela('cadastrar-rota')" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">➕ Cadastrar Nova Viagem</button>
+        <button *ngIf="usuarioLogado.role === 'ADMIN'" class="btn-primary" (click)="definirTela('cadastrar-rota')" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">➕ Cadastrar Operações</button>
       </div>
       <p class="table-subtitle">Monitoramento em tempo real de assentos, frotas e programações.</p>
       <div class="table-responsive">
@@ -117,12 +117,57 @@
     </section>
   </div>
 
-  <div *ngIf="telaAtiva === 'cadastrar-rota' && usuarioLogado.role === 'ADMIN'">
+  <div *ngIf="telaAtiva === 'cadastrar-rota' && usuarioLogado.role === 'ADMIN'" style="display: flex; flex-direction: column; gap: 20px;">
+
     <section class="card" style="max-width: 700px; margin-top: 20px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3>➕ Cadastrar Nova Viagem Operacional</h3>
+        <h3>🗺️ Passo 1: Cadastrar Novo Itinerário (Rota com Preço)</h3>
         <button (click)="definirTela('inicio')" style="background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">⬅️ Voltar</button>
       </div>
+
+      <form #novaRotaForm="ngForm" (ngSubmit)="salvarItinerarioRota(novaRotaForm.value, novaRotaForm)" style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; gap: 16px;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; color: #475569;">Cidade de Origem:</label>
+            <input type="text" name="origem" ngModel required placeholder="Ex: São Paulo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+          <div style="width: 80px; display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; color: #475569;">UF:</label>
+            <input type="text" name="ufOrigem" ngModel required maxLength="2" placeholder="SP" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; color: #475569;">Cidade de Destino:</label>
+            <input type="text" name="destino" ngModel required placeholder="Ex: Rio de Janeiro" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+          <div style="width: 80px; display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; color: #475569;">UF:</label>
+            <input type="text" name="ufDestino" ngModel required maxLength="2" placeholder="RJ" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-transform: uppercase;">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; color: #475569;">Preço Base da Passagem (R$):</label>
+            <input type="number" name="valorBase" ngModel required step="0.01" min="0.01" placeholder="0.00" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; color: #475569;">Horário Padrão de Saída:</label>
+            <input type="time" name="horarioPadrao" ngModel required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+        </div>
+
+        <button type="submit" [disabled]="!novaRotaForm.valid" style="background: #2563eb; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+          💾 Registrar Itinerário e Definir Preço
+        </button>
+      </form>
+    </section>
+
+    <section class="card" style="max-width: 700px; padding: 24px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+      <h3>➕ Passo 2: Agendar Nova Viagem Operacional</h3>
+      <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Vincule um itinerário existente a um veículo da frota e defina a data específica de saída.</p>
 
       <form #rotaForm="ngForm" (ngSubmit)="salvarNovaRota(rotaForm.value, rotaForm)" style="display: flex; flex-direction: column; gap: 16px;">
         <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -155,8 +200,8 @@
           </div>
         </div>
 
-        <button type="submit" [disabled]="!rotaForm.valid" style="background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px;">
-          💾 Agendar Nova Viagem
+        <button type="submit" [disabled]="!rotaForm.valid" style="background: #10b981; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+          💾 Agendar Nova Viagem Operacional
         </button>
       </form>
     </section>
@@ -178,14 +223,32 @@
           </select>
         </div>
 
-        <div style="display: flex; gap: 16px;">
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">Nome do Passageiro:</label>
-            <input type="text" name="nomePassageiro" ngModel required placeholder="Ex: Vania Maria" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-          </div>
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-weight: 600; color: #475569;">CPF do Passageiro:</label>
-            <input type="text" name="cpfPassageiro" ngModel required placeholder="Apenas números" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-weight: 600; color: #475569;">Quantidade de Passagens:</label>
+          <select name="quantidadePassagens" [(ngModel)]="quantidadeSelecionada" (change)="gerarCamposPassageiros()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+            <option [value]="1">1 Passagem</option>
+            <option [value]="2">2 Passagens</option>
+            <option [value]="3">3 Passagens</option>
+            <option [value]="4">4 Passagens</option>
+          </select>
+        </div>
+
+        <div *ngFor="let passageiro of listaPassageirosForm; let i = index" style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 12px;">
+          <h4 style="margin: 0; color: #1e293b;">Passageiro #{{ i + 1 }}</h4>
+
+          <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569; font-size: 13px;">Nome do Passageiro:</label>
+              <input type="text" name="nome_{{i}}" [(ngModel)]="passageiro.nome" required placeholder="Ex: Vania Maria" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+            </div>
+            <div style="flex: 1.5; min-width: 150px; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569; font-size: 13px;">CPF do Passageiro:</label>
+              <input type="text" name="cpf_{{i}}" [(ngModel)]="passageiro.cpf" required placeholder="Apenas números" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+            </div>
+            <div style="flex: 1; min-width: 100px; display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-weight: 600; color: #475569; font-size: 13px;">Nº Assento:</label>
+              <input type="number" name="assento_{{i}}" [(ngModel)]="passageiro.numeroAssentos" required min="1" max="50" placeholder="Cadeira" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+            </div>
           </div>
         </div>
 
@@ -254,19 +317,24 @@
       <h3 style="margin-top: 0; margin-bottom: 6px; color: #065f46; font-size: 21px;">Pagamento Confirmado! 🎉</h3>
       <p style="color: #047857; font-weight: 500; font-size: 14px; margin-bottom: 24px;">Sua transação foi aprovada com sucesso na rede bancária.</p>
 
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; margin-bottom: 24px; font-size: 13px; color: #334155;">
-        <p style="margin: 0 0 8px 0; display: flex; justify-content: space-between;">
-          <strong>Passageiro Cadastrado:</strong> <span>{{ backupHistoricoCompra?.passageiro[0]?.nome }}</span>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; margin-bottom: 24px; font-size: 13px; color: #334155; display: flex; flex-direction: column; gap: 10px;">
+        <div *ngFor="let passageiro of backupHistoricoCompra?.passageiro; let idx = index" style="border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+          <p style="margin: 0 0 4px 0; display: flex; justify-content: space-between;">
+            <strong>Ticket #{{ idx + 1 }} Passageiro:</strong> <span>{{ passageiro.nome }}</span>
+          </p>
+          <p style="margin: 0 0 4px 0; display: flex; justify-content: space-between;">
+            <strong>CPF / Assento Escolhido:</strong> <span>{{ passageiro.cpf }} | Poltrona: {{ passageiro.numeroAssentos }}</span>
+          </p>
+        </div>
+        <p style="margin: 0; display: flex; justify-content: space-between;">
+          <strong>Total Vagas Adquiridas:</strong> <span>{{ backupHistoricoCompra?.passageiro?.length }} assento(s)</span>
         </p>
-        <p style="margin: 0 0 8px 0; display: flex; justify-content: space-between;">
-          <strong>Documento CPF:</strong> <span>{{ backupHistoricoCompra?.passageiro[0]?.cpf }}</span>
-        </p>
-        <p style="margin: 0 0 8px 0; display: flex; justify-content: space-between;">
+        <p style="margin: 0; display: flex; justify-content: space-between;">
           <strong>Modalidade Pago:</strong> <span style="background: #cbd5e1; color: #1e293b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">{{ backupHistoricoCompra?.metodo }}</span>
         </p>
-        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 12px 0;">
+        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 4px 0;">
         <p style="margin: 0; color: #2563eb; font-weight: 500; text-align: center; line-height: 1.5;">
-          ✉️ Bilhete Eletrônico e Voucher despachados para: <br>
+          ✉️ Bilhetes Eletrônicos e Vouchers despachados para: <br>
           <strong style="color: #0f172a; font-size: 14px;">{{ usuarioLogado.email }}</strong>
         </p>
       </div>

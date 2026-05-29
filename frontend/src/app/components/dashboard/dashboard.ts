@@ -17,15 +17,12 @@ import { AreaPassageiroComponent } from '../area-passageiro/area-passageiro';
   styleUrls: ['./dashboard.css']
 })
 export class DashboardComponent implements OnInit {
-  // Controle de Navegação Principal
   telaAtiva: string = 'inicio';
 
-  // Listas de Dados
   listaViagens: any[] = [];
   listaRotasDisponiveis: any[] = [];
   listaTransportesDisponiveis: any[] = [];
 
-  // Dados do Usuário Conectado
   usuarioLogado: any = {
     id: null,
     nome: 'Usuário',
@@ -33,17 +30,18 @@ export class DashboardComponent implements OnInit {
     role: 'PASSAGEIRO'
   };
 
-  // Métricas do Painel
   dadosGlobais: any = {
     totalPassageiros: 0,
     totalEmpresas: 0,
     faturamentoHoje: 0.00
   };
 
-  // Variáveis do Controle de Fluxo de Compra e Pagamento (Integração Java)
-  subTelaCompra: string = 'formulario'; // Passos: 'formulario' | 'pix' | 'sucesso'
+  subTelaCompra: string = 'formulario';
   backupHistoricoCompra: any = null;
   idCompraPendente: number | null = null;
+
+  quantidadeSelecionada: number = 1;
+  listaPassageirosForm: any[] = [{ nome: '', cpf: '', numeroAssentos: null }];
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
@@ -97,7 +95,9 @@ export class DashboardComponent implements OnInit {
   definirTela(tela: string) {
     this.telaAtiva = tela;
     if (tela === 'comprar') {
-      this.subTelaCompra = 'formulario'; // Reseta o fluxo ao entrar na aba
+      this.subTelaCompra = 'formulario';
+      this.quantidadeSelecionada = 1;
+      this.gerarCamposPassageiros();
     }
   }
 
@@ -165,6 +165,32 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  salvarItinerarioRota(dadosForm: any, form: NgForm) {
+    if (form.invalid) return;
+
+    const rotaRequestPayload = {
+      origem: dadosForm.origem,
+      ufOrigem: dadosForm.ufOrigem.toUpperCase(),
+      destino: dadosForm.destino,
+      ufDestino: dadosForm.ufDestino.toUpperCase(),
+      valorBase: Number(dadosForm.valorBase),
+      horarioPadrao: dadosForm.horarioPadrao + ':00'
+    };
+
+    this.http.post('http://localhost:8080/api/rotas/cadastrar', rotaRequestPayload, this.obterHeaders()).subscribe({
+      next: () => {
+        form.resetForm();
+        this.carregarRotasETransportes();
+        this.definirTela('inicio');
+        alert('Rota e preço base cadastrados com sucesso!');
+      },
+      error: (err) => {
+        console.error(err);
+        alert('Erro ao cadastrar a rota. Verifique as restrições do sistema.');
+      }
+    });
+  }
+
   salvarNovaRota(dadosForm: any, form: NgForm) {
     const rId = parseInt(dadosForm.rotaId, 10);
     const tId = parseInt(dadosForm.transportId, 10);
@@ -194,25 +220,33 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  gerarCamposPassageiros() {
+    this.listaPassageirosForm = [];
+    for (let i = 0; i < Number(this.quantidadeSelecionada); i++) {
+      this.listaPassageirosForm.push({ nome: '', cpf: '', numeroAssentos: null });
+    }
+  }
+
   validarEAvancarFluxoCompra(dadosForm: any, form: NgForm) {
     if (form.invalid) return;
 
-    // Garantia de que vamos usar o ID do usuário que está logado de verdade
     const idUsuarioEfetivo = this.usuarioLogado.id;
 
     if (!idUsuarioEfetivo || idUsuarioEfetivo === 1) {
       console.warn("Aviso: O ID do usuário logado veio como nulo ou 1. Verifique se o login foi feito com o Celso.");
     }
 
+    const totalPassagens = Number(this.quantidadeSelecionada);
+
     const compraRequestPayload = {
-      usuarioId: Number(idUsuarioEfetivo), // Força o ID dinâmico do Celso (8)
+      usuarioId: Number(idUsuarioEfetivo),
       viagemId: Number(dadosForm.viagemId),
-      passageiro: [
-        {
-          nome: dadosForm.nomePassageiro,
-          cpf: dadosForm.cpfPassageiro
-        }
-      ],
+      passageiro: this.listaPassageirosForm.map(p => ({
+        nome: p.nome,
+        cpf: p.cpf,
+        numeroAssentos: Number(p.numeroAssentos),
+        quantidadeDeAssentos: totalPassagens
+      })),
       metodo: dadosForm.metodo,
       numeroCartao: dadosForm.numeroCartao || null,
       cvv: dadosForm.cvv || null
@@ -241,17 +275,10 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /**
-   * Disparado manualmente pelo clique do botão na tela de QR Code do PIX
-   */
   dispararCompraParaServidor() {
     this.efetivarConfirmacaoPagamentoNoBackend(null);
   }
 
-  /**
-   * PASSO 2: Chama o endpoint @PutMapping("/atualizar/{idCompra}") do Spring Boot
-   * É este método que altera o status para APROVADO e envia o e-mail!
-   */
   private efetivarConfirmacaoPagamentoNoBackend(form: NgForm | null) {
     if (!this.idCompraPendente) {
       alert('Erro: Nenhuma referência de compra pendente foi localizada.');
@@ -268,10 +295,8 @@ export class DashboardComponent implements OnInit {
           form.resetForm();
         }
 
-        // Transiciona a interface para a tela de Sucesso/Recibo
         this.subTelaCompra = 'sucesso';
 
-        // Recarrega as tabelas para atualizar assentos e faturamento
         this.carregarViagens();
         this.carregarDadosGlobais();
         this.cdr.detectChanges();
@@ -291,6 +316,8 @@ export class DashboardComponent implements OnInit {
     this.subTelaCompra = 'formulario';
     this.backupHistoricoCompra = null;
     this.idCompraPendente = null;
+    this.quantidadeSelecionada = 1;
+    this.gerarCamposPassageiros();
     this.definirTela('inicio');
   }
 
