@@ -85,10 +85,10 @@ export class DashboardComponent implements OnInit {
       const base64Url = parts[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(
-        window.atob(base64)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
+          window.atob(base64)
+              .split('')
+              .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+              .join('')
       );
       return JSON.parse(jsonPayload);
     } catch (e) {
@@ -140,14 +140,25 @@ export class DashboardComponent implements OnInit {
       }
     });
 
+    // ATUALIZADO: Consumindo seu novo método 'listar-todas' do Backend
     if (this.usuarioLogado?.role === 'ADMIN') {
       this.http.get<any[]>('http://localhost:8080/api/empresa/listar-todas', this.obterHeaders()).subscribe({
-        next: (dados) => {
-          this.listaEmpresas = Array.isArray(dados) ? dados : [];
+        next: (dados: any[]) => {
+          if (Array.isArray(dados)) {
+            this.listaEmpresas = dados.map((emp: any) => ({
+              id: emp.id,
+              // Mapeia de forma segura tratando se o DTO devolver 'razaoSocial', 'razao_social' ou 'nome'
+              nome: emp.razaoSocial || emp.razao_social || emp.nome || `Empresa #${emp.id}`
+            }));
+          } else {
+            this.listaEmpresas = [];
+          }
           this.cdr.detectChanges();
         },
         error: (e) => {
+          console.error('Erro ao listar todas as empresas do banco:', e);
           this.listaEmpresas = [];
+          this.cdr.detectChanges();
         }
       });
     }
@@ -190,7 +201,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // RESTAURADO: Mantendo sua lógica original baseada no seu endpoint funcional de rotas/viagens
   carregarViagens() {
     this.http.get<any[]>('http://localhost:8080/api/viagem/listar-todas', this.obterHeaders()).subscribe({
       next: (dados: any) => {
@@ -390,7 +400,6 @@ export class DashboardComponent implements OnInit {
     this.resetarEIrParaHome();
   }
 
-  // CORRIGIDO (any): Aceita o objeto de evento sem causar incompatibilidade com o TS
   cancelarCompra(eventoCompra: any): void {
     const idEfetivo = eventoCompra?.id || eventoCompra?.idCompra || eventoCompra;
 

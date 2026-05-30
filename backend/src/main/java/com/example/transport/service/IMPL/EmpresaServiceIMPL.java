@@ -6,6 +6,7 @@ import com.example.transport.entity.User;
 import com.example.transport.repository.EmpresaRepository;
 import com.example.transport.repository.UserRepository;
 import com.example.transport.request.EmpresaRequest;
+import com.example.transport.response.EmpresaResponse;
 import com.example.transport.response.TransportResponse;
 import com.example.transport.service.EmpresaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,5 +87,11 @@ public class EmpresaServiceIMPL implements EmpresaService {
                         t.getVagas(),
                         t.getStatus()
                 )).toList();
+    }
+
+    @Override
+    public List<EmpresaResponse> listarTodas() {
+        List<Empresa> e = empresaRepository.findAll();
+        return e.stream().map(EmpresaResponse::new).toList();
     }
 }

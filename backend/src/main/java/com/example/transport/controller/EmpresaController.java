@@ -4,6 +4,7 @@ import com.example.transport.entity.Empresa;
 import com.example.transport.request.EmpresaRequest;
 import com.example.transport.response.EmpresaResponse;
 import com.example.transport.response.TransportResponse;
+import com.example.transport.response.ViagemResponse;
 import com.example.transport.service.EmpresaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -47,5 +48,9 @@ public class EmpresaController {
 
         return ResponseEntity.ok(t);
 
+    }
+    @GetMapping("/listar-todas")
+    public ResponseEntity<List<EmpresaResponse>> listarTodasEmpresas() {
+        return ResponseEntity.ok(empresaService.listarTodas());
     }
 }

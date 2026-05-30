@@ -15,8 +15,8 @@ public record EmpresaResponse(
                         e.getUser().getEmail(),
                         e.getCnpj(),
                         e.getTelefone(),
-                        e.getRazaoSocial(),
-                        e.getEndereco()
+                        e.getEndereco(),
+                        e.getRazaoSocial()
 
                 );
 
