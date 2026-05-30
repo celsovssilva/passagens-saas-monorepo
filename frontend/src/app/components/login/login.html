@@ -5,17 +5,31 @@
     <form (ngSubmit)="executarLogin()">
       <div class="input-group">
         <label>E-mail ou Usuário</label>
-        <input type="text" name="login" [(ngModel)]="credenciais.login" placeholder="seuemail@exemplo.com" required>
+        <input
+          type="text"
+          name="login"
+          [(ngModel)]="credenciais.login"
+          placeholder="seuemail@exemplo.com"
+          required
+        >
       </div>
 
       <div class="input-group">
         <label>Senha</label>
-        <input type="password" name="senha" [(ngModel)]="credenciais.senha" placeholder="Digite sua senha" required>
+        <input
+          type="password"
+          name="senha"
+          [(ngModel)]="credenciais.senha"
+          placeholder="Digite sua senha"
+          required
+        >
       </div>
 
       <button type="submit" class="btn-login">Entrar</button>
 
-      <p class="link-cadastro">Não tem uma conta? <a routerLink="/cadastro">Cadastre-se aqui</a></p>
+      <p class="link-cadastro">
+        Não tem uma conta? <a routerLink="/cadastro">Cadastre-se aqui</a>
+      </p>
     </form>
   </div>
 </div>

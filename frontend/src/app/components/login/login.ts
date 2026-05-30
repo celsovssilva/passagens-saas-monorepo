@@ -9,10 +9,10 @@ import { AuthService } from '../../service/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
-  styleUrl: './login.css'
+  styleUrls: ['./login.css']
 })
 export class LoginComponent {
-  // Mantém o objeto vinculado ao seu formulário HTML
+  // Objeto vinculado aos inputs do formulário HTML
   credenciais = {
     login: '',
     senha: ''
@@ -24,7 +24,6 @@ export class LoginComponent {
   ) {}
 
   executarLogin() {
-    // 🚀 CORRIGIDO: Enviando exatamente a chave 'login' que o seu Java espera receber
     const dadosLogin = {
       login: this.credenciais.login,
       senha: this.credenciais.senha
@@ -33,7 +32,40 @@ export class LoginComponent {
     this.authService.login(dadosLogin).subscribe({
       next: (response) => {
         console.log('Login efetuado com sucesso!', response);
-        // Muda para a tela do dashboard agora que o token foi gerado
+
+        // Trata o token caso venha encapsulado em um objeto ou como string pura
+        const token = response && typeof response === 'object' ? (response.token || response.tokenAcesso) : response;
+
+        // Garante a leitura do token ativo (seja retornado na response ou já salvo pelo AuthService)
+        const tokenAtivo = token || localStorage.getItem('token');
+
+        if (tokenAtivo) {
+          try {
+            // Decodifica a seção do Payload do JWT (segunda parte do token)
+            const parts = tokenAtivo.split('.');
+            const base64Url = parts[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(window.atob(base64));
+
+            // Lê a claim de nível de acesso (role/authority) injetada pelo Spring Security
+            const roleUsuario = payload.role || payload.authority;
+            console.log('Nível de acesso identificado:', roleUsuario);
+
+            // REDIRECIONAMENTO INTELIGENTE BASEADO NA ROLE
+            if (roleUsuario === 'EMPRESA') {
+              this.router.navigate(['/dashboard-empresa']);
+            } else if (roleUsuario === 'ADMIN') {
+              this.router.navigate(['/dashboard']);
+            } else {
+              this.router.navigate(['/area-passageiro']);
+            }
+            return; // Interrompe a execução para não cair no fallback abaixo
+          } catch (e) {
+            console.error('Erro ao decodificar payload do token JWT:', e);
+          }
+        }
+
+        // Fallback de segurança caso o formato do token mude inesperadamente
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
