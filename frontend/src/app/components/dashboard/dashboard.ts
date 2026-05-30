@@ -21,7 +21,7 @@ export class DashboardComponent implements OnInit {
 
   listaViagens: any[] = [];
   listaRotasDisponiveis: any[] = [];
-  listaTransportesDisponiveis: any[] = [];
+  listaTransportesDisponiveis: any[] = []; // Alimentado dinamicamente via listar-todas
   listaFrota: any[] = [];
   listaEmpresas: any[] = [];
 
@@ -118,37 +118,14 @@ export class DashboardComponent implements OnInit {
   }
 
   obterDadosDaFrota() {
-    const idParaExibicao = 1;
-    this.http.get<any>(`http://localhost:8080/api/transport/buscar/${idParaExibicao}`, this.obterHeaders()).subscribe({
-      next: (dado: any) => {
-        if (dado) {
-          this.listaFrota = [{
-            id: idParaExibicao,
-            modelo: dado.modelo || 'Não Informado',
-            capacidade: dado.capacidade || 0,
-            status: dado.status || 'ATIVO'
-          }];
-        } else {
-          this.listaFrota = [];
-        }
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => {
-        console.error('Erro ao buscar transporte via ID estável:', err);
-        this.listaFrota = [];
-        this.cdr.detectChanges();
-      }
-    });
-
-    // ATUALIZADO: Consumindo seu novo método 'listar-todas' do Backend
+    // 1. Carrega as empresas para o select do formulário de cadastro
     if (this.usuarioLogado?.role === 'ADMIN') {
       this.http.get<any[]>('http://localhost:8080/api/empresa/listar-todas', this.obterHeaders()).subscribe({
         next: (dados: any[]) => {
           if (Array.isArray(dados)) {
             this.listaEmpresas = dados.map((emp: any) => ({
               id: emp.id,
-              // Mapeia de forma segura tratando se o DTO devolver 'razaoSocial', 'razao_social' ou 'nome'
-              nome: emp.razaoSocial || emp.razao_social || emp.nome || `Empresa #${emp.id}`
+              nome: emp.razao_social || emp.razaoSocial || emp.nome || `Empresa #${emp.id}`
             }));
           } else {
             this.listaEmpresas = [];
@@ -156,12 +133,35 @@ export class DashboardComponent implements OnInit {
           this.cdr.detectChanges();
         },
         error: (e) => {
-          console.error('Erro ao listar todas as empresas do banco:', e);
+          console.error('Erro ao listar todas as empresas:', e);
           this.listaEmpresas = [];
           this.cdr.detectChanges();
         }
       });
     }
+
+    // 2. AQUI ESTÁ O SEGREDO DA TABELA: Buscar todos os transportes e salvar na 'listaFrota'
+    this.http.get<any[]>('http://localhost:8080/api/transport/listar-todas', this.obterHeaders()).subscribe({
+      next: (dados: any[]) => {
+        if (Array.isArray(dados)) {
+          // Preenche a tabela visual com TODOS os veículos do banco
+          this.listaFrota = dados.map((dado: any) => ({
+            id: dado.id || dado.idTransporte,
+            modelo: dado.modelo || 'Não Informado',
+            capacidade: dado.vagas !== undefined && dado.vagas !== null ? dado.vagas : (dado.capacidade || 0),
+            status: dado.status || 'ATIVO'
+          }));
+        } else {
+          this.listaFrota = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Erro ao listar a frota completa para a tabela:', err);
+        this.listaFrota = [];
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   salvarTransporte(dadosForm: any, form: NgForm) {
@@ -170,6 +170,7 @@ export class DashboardComponent implements OnInit {
     const transportPayload = {
       modelo: dadosForm.modelo,
       capacidade: Number(dadosForm.capacidade),
+      vagas: Number(dadosForm.capacidade),
       status: dadosForm.status,
       empresaId: this.usuarioLogado.role === 'EMPRESA' ? Number(this.usuarioLogado.empresaId) : Number(dadosForm.empresaId || 1)
     };
@@ -218,8 +219,11 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  // ATUALIZADO: Processamento robusto e tratamento de chaves do TransportResponse
   carregarRotasETransportes() {
-    this.http.get<any[]>('http://localhost:8080/api/rotas', this.obterHeaders()).subscribe({
+    const headersSeguros = this.obterHeaders();
+
+    this.http.get<any[]>('http://localhost:8080/api/rotas', headersSeguros).subscribe({
       next: (dados: any) => {
         this.listaRotasDisponiveis = dados;
         this.cdr.detectChanges();
@@ -227,13 +231,26 @@ export class DashboardComponent implements OnInit {
       error: (err: any) => console.error('Erro ao buscar rotas:', err)
     });
 
-    const idTransportePadrao = 1;
-    this.http.get<any>(`http://localhost:8080/api/transport/buscar/${idTransportePadrao}`, this.obterHeaders()).subscribe({
-      next: (dado: any) => {
-        this.listaTransportesDisponiveis = Array.isArray(dado) ? dado : [dado];
+    this.http.get<any[]>('http://localhost:8080/api/transport/listar-todas', headersSeguros).subscribe({
+      next: (dados: any[]) => {
+        if (Array.isArray(dados)) {
+          this.listaTransportesDisponiveis = dados.map((t: any) => ({
+            id: t.id || t.idTransporte || 1, // Atribui fallback caso o DTO não envie a chave primaria id explícita
+            modelo: t.modelo || 'Modelo não cadastrado',
+            status: t.status || 'ATIVO',
+            // Mapeia tanto a propriedade 'capacidade' quanto 'vagas' de forma flexível
+            vagas: t.capacidade !== undefined && t.capacidade !== null ? Number(t.capacidade) : (t.vagas ? Number(t.vagas) : 42)
+          }));
+        } else {
+          this.listaTransportesDisponiveis = [];
+        }
         this.cdr.detectChanges();
       },
-      error: (err: any) => console.error(`Erro ao buscar transporte ID ${idTransportePadrao}:`, err)
+      error: (err: any) => {
+        console.error('Erro ao listar todos os veículos do backend:', err);
+        this.listaTransportesDisponiveis = [];
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -286,14 +303,20 @@ export class DashboardComponent implements OnInit {
     const rId = parseInt(dadosForm.rotaId, 10);
     const tId = parseInt(dadosForm.transportId, 10);
 
+    const veiculoSelecionado = this.listaTransportesDisponiveis.find(t => t.id === tId);
+
+    const totalVagasDoVeiculo = veiculoSelecionado && veiculoSelecionado.vagas
+        ? Number(veiculoSelecionado.vagas)
+        : 42;
+
     const viagemRequestPayload = {
       id: null,
       rotaId: isNaN(rId) ? null : rId,
-      transportId: isNaN(tId) ? 1 : tId,
+      transportId: isNaN(tId) ? null : tId,
       dataSaida: dadosForm.dataSaida,
       userId: null,
-      capacidade: dadosForm.capacidade ? Number(dadosForm.capacidade) : 42,
-      vagasDisponiveis: dadosForm.capacidade ? Number(dadosForm.capacidade) : 42,
+      capacidade: totalVagasDoVeiculo,
+      vagasDisponiveis: totalVagasDoVeiculo,
       cpf: dadosForm.cpf || null,
       nomePassageiro: dadosForm.nomePassageiro || null
     };
@@ -305,7 +328,7 @@ export class DashboardComponent implements OnInit {
         this.carregarViagens();
       },
       error: (err: any) => {
-        console.error('Erro ao cadastrar rota:', err);
+        console.error('Erro ao cadastrar rota operacional:', err);
         alert('Erro ao salvar viagem.');
       }
     });

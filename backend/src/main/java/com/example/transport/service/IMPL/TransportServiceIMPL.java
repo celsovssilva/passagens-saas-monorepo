@@ -3,9 +3,12 @@ package com.example.transport.service.IMPL;
 import com.example.transport.entity.Transport;
 import com.example.transport.repository.TransportRepository;
 import com.example.transport.request.TransportRequest;
+import com.example.transport.response.TransportResponse;
 import com.example.transport.service.TransportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class TransportServiceIMPL implements TransportService {
@@ -42,5 +45,11 @@ public class TransportServiceIMPL implements TransportService {
     @Override
     public void deletar(Long id) {
         transportRepository.deleteById(id);
+    }
+
+    @Override
+    public List<TransportResponse> listarTodas() {
+        List<Transport> t =transportRepository.findAll();
+        return t.stream().map(TransportResponse::new).toList();
     }
 }

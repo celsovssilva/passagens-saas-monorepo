@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -49,5 +50,10 @@ public class TransportController {
     @DeleteMapping("/deletar/{id}")
     public void deletar(@PathVariable Long id){
         transportService.deletar(id);
+    }
+
+    @GetMapping("/listar-todas")
+    public ResponseEntity<List<TransportResponse>> buscarTodos(){
+        return ResponseEntity.ok(transportService.listarTodas());
     }
 }
