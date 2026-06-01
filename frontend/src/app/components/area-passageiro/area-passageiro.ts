@@ -1,7 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ViagemCompraService, ViagemResponse, CompraResponse } from '../../service/viagem-compra.service';
+import { ViagemCompraService, ViagemResponse, PassagemResponse, PassageiroResponse } from '../../service/viagem-compra.service';
 
 @Component({
   selector: 'app-area-passageiro',
@@ -20,11 +20,16 @@ export class AreaPassageiroComponent implements OnInit {
   viagensDisponiveis: ViagemResponse[] = [];
   pesquisaFeita: boolean = false;
 
-  minhasCompras: CompraResponse[] = [];
+  minhasPassagens: PassagemResponse[] = [];
   qtdAssentosSelecionados: number = 1;
 
   mensagemSucesso: string = '';
   mensagemErro: string = '';
+
+  // Objetos estruturados com base nas respostas reais do seu backend
+  dadosPerfilPassageiro: any = { nome: '', sobrenome: '', phone: '', idade: 0, email: '' };
+  listaRotasGerais: any[] = [];
+  listaEmpresasGerais: any[] = [];
 
   constructor(private apiService: ViagemCompraService) {}
 
@@ -32,6 +37,7 @@ export class AreaPassageiroComponent implements OnInit {
     const idSalvo = localStorage.getItem('userId');
     if (idSalvo) {
       this.userId = Number(idSalvo);
+      this.obterPerfilPassageiro();
     }
   }
 
@@ -48,6 +54,7 @@ export class AreaPassageiroComponent implements OnInit {
   buscarPassagens() {
     if (!this.busca.origem || !this.busca.destino || !this.busca.data) return;
 
+    // Converte a data simples do input para o formato esperado pelo LocalDateTime do Java
     const dataFormatada = `${this.busca.data}T00:00:00`;
 
     this.apiService.pesquisarViagens(this.busca.origem, this.busca.destino, dataFormatada).subscribe({
@@ -55,7 +62,7 @@ export class AreaPassageiroComponent implements OnInit {
         this.viagensDisponiveis = viagens;
         this.pesquisaFeita = true;
       },
-      error: () => this.mensagemErro = 'Erro ao pesquisar viagens.'
+      error: () => this.mensagemErro = 'Erro ao pesquisar viagens no sistema.'
     });
   }
 
@@ -65,45 +72,72 @@ export class AreaPassageiroComponent implements OnInit {
       return;
     }
 
-    const request = {
+    // Montando o objeto exatamente como o ViagemRequest do seu agendarViagem() espera receber
+    const requestViagem = {
+      id: viagemId,
       userId: this.userId,
-      viagemId: viagemId,
-      quantidadeAssentos: this.qtdAssentosSelecionados
+      cpf: this.dadosPerfilPassageiro.cpf || '000.000.000-00',
+      nomePassageiro: this.dadosPerfilPassageiro.nome,
+      capacidade: this.qtdAssentosSelecionados // Capacidade solicitada na reserva
     };
 
-    this.apiService.comprarPassagem(request).subscribe({
+    this.apiService.comprarPassagem(requestViagem).subscribe({
       next: () => {
-        this.mensagemSucesso = 'Reserva realizada! Confirme o pagamento no histórico.';
+        this.mensagemSucesso = 'Passagem agendada e confirmada com sucesso!';
         this.buscarPassagens();
       },
-      error: () => this.mensagemErro = 'Não foi possível realizar a compra.'
+      error: (err: any) => this.mensagemErro = err.error?.message || 'Não foi possível realizar o agendamento da viagem.'
     });
   }
 
   carregarHistorico() {
     this.apiService.obterHistorico(this.userId).subscribe({
-      next: (compras: CompraResponse[]) => this.minhasCompras = compras,
-      error: () => this.mensagemErro = 'Erro ao carregar histórico.'
+      next: (passagens: PassagemResponse[]) => this.minhasPassagens = passagens,
+      error: () => this.mensagemErro = 'Erro ao carregar seu histórico de passagens.'
     });
   }
 
-  pagar(compraId: number) {
-    this.apiService.confirmarPagamento(compraId).subscribe({
+  obterPerfilPassageiro() {
+    this.apiService.buscarPassageiroPorId(this.userId).subscribe({
+      next: (dados: PassageiroResponse) => this.dadosPerfilPassageiro = dados,
+      error: () => console.error('Erro ao buscar dados do perfil do passageiro.')
+    });
+  }
+
+  atualizarDadosPerfil() {
+    this.apiService.atualizarPassageiro(this.userId, this.dadosPerfilPassageiro).subscribe({
       next: () => {
-        this.mensagemSucesso = 'Pagamento confirmado com sucesso!';
-        this.carregarHistorico();
-      }
+        this.mensagemSucesso = 'Seus dados foram atualizados com sucesso!';
+        this.obterPerfilPassageiro();
+      },
+      error: () => this.mensagemErro = 'Erro ao salvar modificações do perfil.'
     });
   }
 
-  cancelar(compraId: number) {
-    if (confirm('Deseja realmente cancelar esta passagem?')) {
-      this.apiService.cancelarCompra(compraId).subscribe({
+  excluirContaPassageiro() {
+    if (confirm('ATENÇÃO: Deseja realmente excluir permanentemente sua conta do sistema?')) {
+      this.apiService.deletarPassageiro(this.userId).subscribe({
         next: () => {
-          this.mensagemSucesso = 'Passagem cancelada.';
-          this.carregarHistorico();
-        }
+          alert('Sua conta foi removida com sucesso do banco de dados.');
+          localStorage.clear();
+          window.location.reload();
+        },
+        error: () => this.mensagemErro = 'Não foi possível deletar a conta.'
       });
     }
+  }
+
+  listarTodasAsRotas() {
+    this.apiService.obterRotasGerais().subscribe({
+      next: (dados: any[]) => this.listaRotasGerais = dados,
+      error: () => console.error('Erro ao carregar malha de rotas.')
+    });
+  }
+
+  listarTodasAsEmpresas() {
+    this.apiService.obterTodasEmpresas().subscribe({
+      next: (dados: any[]) => this.listaEmpresasGerais = dados,
+      error: () => console.error('Erro ao listar as empresas operacionais.')
+    });
   }
 }

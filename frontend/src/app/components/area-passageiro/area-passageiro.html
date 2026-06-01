@@ -1,49 +1,54 @@
-<div class="passageiro-dashboard">
-  <div class="sub-nav">
-    <button [class.active]="subAbaAtiva === 'buscar'" (click)="mudarSubAba('buscar')">🔍 Buscar Passagens</button>
-    <button [class.active]="subAbaAtiva === 'historico'" (click)="mudarSubAba('historico')">🎫 Minhas Viagens</button>
+<div class="passageiro-dashboard" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 24px;">
+
+  <div class="sub-nav" style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; flex-wrap: wrap;">
+    <button [class.active]="subAbaAtiva === 'buscar'" (click)="mudarSubAba('buscar')" style="padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; font-size: 14px;">🔍 Buscar Passagens</button>
+    <button [class.active]="subAbaAtiva === 'historico'" (click)="mudarSubAba('historico')" style="padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; font-size: 14px;">🎫 Minhas Passagens</button>
+    <button [class.active]="subAbaAtiva === 'perfil'" (click)="mudarSubAba('perfil')" style="padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; font-size: 14px;">👤 Meu Perfil</button>
+    <button [class.active]="subAbaAtiva === 'empresas'" (click)="mudarSubAba('empresas'); listarTodasAsEmpresas()" style="padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; font-size: 14px;">🏢 Empresas</button>
+    <button [class.active]="subAbaAtiva === 'rotas'" (click)="mudarSubAba('rotas'); listarTodasAsRotas()" style="padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: bold; font-size: 14px;">🗺️ Rotas</button>
   </div>
 
-  <div class="alert alert-success" *ngIf="mensagemSucesso">✅ {{ mensagemSucesso }}</div>
-  <div class="alert alert-danger" *ngIf="mensagemErro">❌ {{ mensagemErro }}</div>
+  <div class="alert alert-success" *ngIf="mensagemSucesso" style="background: #d1e7dd; color: #0f5132; padding: 12px; border-radius: 6px; margin-bottom: 15px;">✅ {{ mensagemSucesso }}</div>
+  <div class="alert alert-danger" *ngIf="mensagemErro" style="background: #f8d7da; color: #842029; padding: 12px; border-radius: 6px; margin-bottom: 15px;">❌ {{ mensagemErro }}</div>
 
   <div *ngIf="subAbaAtiva === 'buscar'" class="content-section">
-    <div class="search-box card">
-      <h3>Para onde você quer ir?</h3>
-      <form (ngSubmit)="buscarPassagens()" class="search-form">
-        <div class="input-group">
-          <label>Origem</label>
-          <input type="text" [(ngModel)]="busca.origem" name="origem" placeholder="Cidade de saída" required>
+    <div class="search-box card" style="background: #f8fafc; padding: 20px; border-radius: 6px; border: 1px solid #e2e8f0;">
+      <h3 style="margin-top:0;">Para onde você quer ir?</h3>
+      <form (ngSubmit)="buscarPassagens()" class="search-form" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+        <div class="input-group" style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 180px;">
+          <label style="font-weight: 600; font-size: 12px;">Origem</label>
+          <input type="text" [(ngModel)]="busca.origem" name="origem" placeholder="Cidade de saída" required style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
         </div>
-        <div class="input-group">
-          <label>Destino</label>
-          <input type="text" [(ngModel)]="busca.destino" name="destino" placeholder="Cidade de chegada" required>
+        <div class="input-group" style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 180px;">
+          <label style="font-weight: 600; font-size: 12px;">Destino</label>
+          <input type="text" [(ngModel)]="busca.destino" name="destino" placeholder="Cidade de chegada" required style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
         </div>
-        <div class="input-group">
-          <label>Data de Ida</label>
-          <input type="date" [(ngModel)]="busca.data" name="data" required>
+        <div class="input-group" style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 150px;">
+          <label style="font-weight: 600; font-size: 12px;">Data de Ida</label>
+          <input type="date" [(ngModel)]="busca.data" name="data" required style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
         </div>
-        <button type="submit" class="btn-buscar">Buscar</button>
+        <button type="submit" class="btn-buscar" style="background: #2563eb; color: white; border: none; padding: 9px 24px; border-radius: 4px; font-weight: bold; cursor: pointer;">Buscar</button>
       </form>
     </div>
 
-    <div class="results-container" *ngIf="pesquisaFeita">
+    <div class="results-container" *ngIf="pesquisaFeita" style="margin-top: 25px;">
       <h3>Viagens Encontradas</h3>
-      <p *ngIf="viagensDisponiveis.length === 0" class="no-results">Nenhuma viagem disponível para esta rota e data.</p>
+      <p *ngIf="viagensDisponiveis.length === 0" class="no-results" style="color: #64748b; font-style: italic;">Nenhuma viagem disponível para esta rota e data.</p>
 
-      <div class="viagem-card card" *ngFor="let viagem of viagensDisponiveis">
+      <div class="viagem-card card" *ngFor="let viagem of viagensDisponiveis" style="display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; padding: 16px; border-radius: 6px; margin-bottom: 12px; background: white;">
         <div class="viagem-info">
-          <div class="route">
-            <span>🚌 {{ viagem.origem }}</span> ➡️ <span>{{ viagem.destino }}</span>
+          <div class="route" style="font-size: 16px; font-weight: bold;">
+            <span>🚌 {{ viagem.origem }} ({{ viagem.ufOrigem }})</span> ➡️ <span>{{ viagem.destino }} ({{ viagem.ufDestino }})</span>
           </div>
-          <p class="time">📅 {{ viagem.data | date:'dd/MM/yyyy HH:mm' }}</p>
-          <p class="seats">💺 Assentos livres: <strong>{{ viagem.assentosDisponiveis }}</strong></p>
+          <p class="time" style="margin: 4px 0; color: #475569;">📅 Saída: {{ viagem.dataSaida | date:'dd/MM/yyyy HH:mm' }}</p>
+          <p class="vehicle" style="margin: 4px 0; color: #64748b; font-size: 13px;">🚍 Veículo: {{ viagem.transporteModelo }}</p>
+          <p class="seats" style="margin: 0; color: #64748b; font-size: 13px;">💺 Assentos livres: <strong>{{ viagem.vagasDisponiveis }}</strong></p>
         </div>
-        <div class="viagem-buy">
-          <span class="price">R$ {{ viagem.preco | number:'1.2-2' }}</span>
-          <div class="buy-actions">
-            <input type="number" [(ngModel)]="qtdAssentosSelecionados" min="1" [max]="viagem.assentosDisponiveis" class="input-qtd">
-            <button class="btn-comprar" (click)="comprar(viagem.id)" [disabled]="viagem.assentosDisponiveis <= 0">Comprar</button>
+        <div class="viagem-buy" style="text-align: right; display: flex; flex-direction: column; gap: 8px;">
+          <span class="price" style="font-size: 18px; font-weight: bold; color: #10b981;">R$ {{ viagem.valor | number:'1.2-2' }}</span>
+          <div class="buy-actions" style="display: flex; gap: 8px;">
+            <input type="number" [(ngModel)]="qtdAssentosSelecionados" min="1" [max]="viagem.vagasDisponiveis" class="input-qtd" style="width: 50px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center;">
+            <button class="btn-comprar" (click)="comprar(viagem.id)" [disabled]="viagem.vagasDisponiveis <= 0" style="background: #10b981; color: white; border: none; padding: 6px 16px; border-radius: 4px; font-weight: bold; cursor: pointer;">Agendar</button>
           </div>
         </div>
       </div>
@@ -51,35 +56,97 @@
   </div>
 
   <div *ngIf="subAbaAtiva === 'historico'" class="content-section">
-    <h3>Suas Reservas e Viagens</h3>
-    <p *ngIf="minhasCompras.length === 0" class="no-results">Você ainda não realizou nenhuma compra.</p>
+    <h3>Suas Passagens Adquiridas</h3>
+    <p *ngIf="minhasPassagens.length === 0" class="no-results" style="color: #64748b; font-style: italic;">Você ainda não possui passagens emitidas.</p>
 
-    <div class="table-container card" *ngIf="minhasCompras.length > 0">
-      <table class="compras-table">
+    <div class="table-container card" *ngIf="minhasPassagens.length > 0" style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+      <table class="compras-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
         <thead>
-        <tr>
-          <th>Destino</th>
-          <th>Data</th>
-          <th>Assentos</th>
-          <th>Total</th>
-          <th>Status</th>
-          <th>Ações</th>
+        <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Passageiro</th>
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Itinerário</th>
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Data Compra</th>
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Qtd Assentos</th>
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Cadeira(s)</th>
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Status</th>
         </tr>
         </thead>
         <tbody>
-        <tr *ngFor="let compra of minhasCompras">
-          <td>{{ compra.viagem.origem }} a {{ compra.viagem.destino }}</td>
-          <td>{{ compra.viagem.data | date:'dd/MM/yyyy HH:mm' }}</td>
-          <td>{{ compra.quantidadeAssentos }}</td>
-          <td>R$ {{ compra.valorTotal | number:'1.2-2' }}</td>
-          <td><span class="status-badge" [ngClass]="compra.status.toLowerCase()">{{ compra.status }}</span></td>
-          <td>
-            <button *ngIf="compra.status === 'PENDENTE'" class="btn-pagar" (click)="pagar(compra.id)">💳 Pagar</button>
-            <button *ngIf="compra.status !== 'CANCELADO'" class="btn-cancelar" (click)="cancelar(compra.id)">❌ Cancelar</button>
+        <tr *ngFor="let passagem of minhasPassagens" style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px; font-weight: 500;">{{ passagem.nomePassageiro }}<br><small style="color:#64748b">{{passagem.documento}}</small></td>
+          <td style="padding: 12px;">🚌 {{ passagem.origem }} ➡️ {{ passagem.destino }}</td>
+          <td style="padding: 12px; color: #475569;">{{ passagem.dataHoraDaCompra | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td style="padding: 12px; text-align: center;">{{ passagem.quantidadeDeAssentos }}</td>
+          <td style="padding: 12px; font-weight: bold; color: #2563eb;">#{{ passagem.numeroAssentos || 'A definir' }}</td>
+          <td style="padding: 12px;">
+            <span class="status-badge" style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #d1e7dd; color: #0f5132;">PAGA</span>
           </td>
         </tr>
         </tbody>
       </table>
     </div>
   </div>
+
+  <div *ngIf="subAbaAtiva === 'perfil'" class="content-section">
+    <div class="perfil-box card" style="background: #ffffff; padding: 20px; border-radius: 6px; border: 1px solid #e2e8f0; max-width: 500px;">
+      <h3>Meus Dados Pessoais</h3>
+      <div *ngIf="dadosPerfilPassageiro">
+        <form (ngSubmit)="atualizarDadosPerfil()" class="perfil-form" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="input-group" style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; font-size: 13px; color: #475569;">Nome</label>
+            <input type="text" [(ngModel)]="dadosPerfilPassageiro.nome" name="nome" required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+          <div class="input-group" style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; font-size: 13px; color: #475569;">Telefone</label>
+            <input type="text" [(ngModel)]="dadosPerfilPassageiro.phone" name="phone" required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+          <div class="input-group" style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-weight: 600; font-size: 13px; color: #475569;">Idade</label>
+            <input type="number" [(ngModel)]="dadosPerfilPassageiro.idade" name="idade" required style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          </div>
+          <div class="perfil-actions" style="display: flex; gap: 10px; margin-top: 10px;">
+            <button type="submit" class="btn-salvar" style="flex: 1; background: #2563eb; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">Salvar Alterações</button>
+            <button type="button" class="btn-deletar" (click)="excluirContaPassageiro()" style="background: #ef4444; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">⚠️ Excluir Conta</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="subAbaAtiva === 'empresas'" class="content-section">
+    <h3>Empresas Parceiras Conectadas</h3>
+    <p *ngIf="listaEmpresasGerais.length === 0" class="no-results" style="color: #64748b; font-style: italic;">Nenhuma empresa parceira cadastrada no momento.</p>
+
+    <div class="grid-empresas" *ngIf="listaEmpresasGerais.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+      <div class="empresa-card card" *ngFor="let empresa of listaEmpresasGerais" style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 6px; background: #f8fafc;">
+        <h4 style="margin-top: 0; color: #1e293b;">🏢 {{ empresa.nome }}</h4>
+        <p style="margin: 4px 0; font-size: 13px;"><strong>CNPJ:</strong> {{ empresa.cnpj || 'Sob Consulta' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="subAbaAtiva === 'rotas'" class="content-section">
+    <h3>Linhas e Rotas da Plataforma</h3>
+    <p *ngIf="listaRotasGerais.length === 0" class="no-results" style="color: #64748b; font-style: italic;">Nenhuma rota ativa cadastrada.</p>
+
+    <div class="table-container card" *ngIf="listaRotasGerais.length > 0" style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+      <table class="rotas-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+        <thead>
+        <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Origem</th>
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Destino</th>
+          <th style="padding: 12px; font-weight: 600; color: #475569;">Preço Base</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let rota of listaRotasGerais" style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px; font-weight: 500;">🟢 {{ rota.origem }}</td>
+          <td style="padding: 12px; font-weight: 500;">🔴 {{ rota.destino }}</td>
+          <td style="padding: 12px; font-weight: bold; color: #10b981;">R$ {{ rota.valor | number:'1.2-2' }}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
