@@ -41,20 +41,33 @@ export class LoginComponent {
 
         if (tokenAtivo) {
           try {
+            // Salva o token para garantir persistência nas requisições HTTP do Dashboard
+            localStorage.setItem('token', tokenAtivo);
+
             // Decodifica a seção do Payload do JWT (segunda parte do token)
             const parts = tokenAtivo.split('.');
             const base64Url = parts[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const payload = JSON.parse(window.atob(base64));
 
-            // Lê a claim de nível de acesso (role/authority) injetada pelo Spring Security
-            const roleUsuario = payload.role || payload.authority;
-            console.log('Nível de acesso identificado:', roleUsuario);
+            // Lê a claim de nível de acesso (role/authority) e sanitiza o texto (.trim())
+            let roleUsuario = payload.role || payload.authority || '';
+            roleUsuario = roleUsuario.toString().trim().toUpperCase();
 
-            // REDIRECIONAMENTO INTELIGENTE BASEADO NA ROLE
-            if (roleUsuario === 'EMPRESA') {
+            console.log('Nível de acesso identificado e tratado:', roleUsuario);
+
+            // Salva os dados de escopo no localStorage para validação das telas internas
+            localStorage.setItem('role', roleUsuario);
+            localStorage.setItem('email', payload.sub || '');
+
+            if (payload.empresaId) {
+              localStorage.setItem('empresaId', payload.empresaId.toString());
+            }
+
+            // REDIRECIONAMENTO BASEADO NA ROLE SANITIZADA
+            if (roleUsuario.includes('EMPRESA')) {
               this.router.navigate(['/dashboard-empresa']);
-            } else if (roleUsuario === 'ADMIN') {
+            } else if (roleUsuario.includes('ADMIN')) {
               this.router.navigate(['/dashboard']);
             } else {
               this.router.navigate(['/area-passageiro']);
