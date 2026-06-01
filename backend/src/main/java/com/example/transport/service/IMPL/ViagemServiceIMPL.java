@@ -27,6 +27,8 @@ public class ViagemServiceIMPL implements ViagemService {
     private RotasRepository rotasRepository;
     @Autowired
     private  PassagemRepository passagemRespository;
+    @Autowired
+    private EmpresaRepository empresaRepository;
     @Override
     @Transactional
     public ViagemResponse agendarViagem(ViagemRequest viagemRequest) {
@@ -123,5 +125,10 @@ public class ViagemServiceIMPL implements ViagemService {
         List<Viagem> viagensEncontradas = viagemRepository.buscarPorDataERota(origem,destino,data);
         return viagensEncontradas.stream()
                 .map(ViagemResponse::new).toList();
+    }
+
+    @Override
+    public List<Viagem> listarViagensPorEmpresa(Long empresaId) {
+        return viagemRepository.findByEmpresaId(empresaId);
     }
 }

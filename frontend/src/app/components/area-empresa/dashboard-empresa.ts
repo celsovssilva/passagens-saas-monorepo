@@ -69,12 +69,11 @@ export class DashboardEmpresaComponent implements OnInit {
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const payload = JSON.parse(window.atob(base64));
 
-        console.log('Payload completo do JWT decodificado:', payload); // 👀 Log para auditar os campos do Token
+        console.log('Payload completo do JWT decodificado:', payload);
 
-        // Mapeia os dados do usuário autenticado a partir do payload do JWT
         this.usuarioLogado.id = payload.id || payload.userId;
 
-        // 🔥 CORREÇÃO DO EMPRESA_ID NULL: Varre todas as possíveis nomenclaturas do payload e força conversão numérica
+        // Varre todas as possíveis nomenclaturas do payload e força conversão numérica
         const rawEmpresaId = payload.empresaId || payload.empresa_id || payload.empresa || payload.idEmpresa;
         this.usuarioLogado.empresaId = rawEmpresaId ? Number(rawEmpresaId) : null;
 
@@ -93,11 +92,11 @@ export class DashboardEmpresaComponent implements OnInit {
 
   obterHeaders() {
     const token = localStorage.getItem('token');
-    return {
-      headers: new HttpHeaders({
-        'Authorization': token ? `Bearer ${token}` : ''
-      })
-    };
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return { headers };
   }
 
   definirTela(tela: string) {
@@ -138,7 +137,7 @@ export class DashboardEmpresaComponent implements OnInit {
 
     this.http.put(`http://localhost:8080/api/empresa/atualizar/${this.dadosEmpresa.id}`, this.dadosEmpresa, this.obterHeaders()).subscribe({
       next: () => {
-        alert('Dados cadastrais updated com sucesso!');
+        alert('Dados cadastrais atualizados com sucesso!');
         this.carregarDadosPerfilEmpresa();
       },
       error: (err) => alert('Erro ao atualizar os dados da empresa.')
@@ -146,28 +145,25 @@ export class DashboardEmpresaComponent implements OnInit {
   }
 
   // ==========================================
-  // GESTÃO DA FROTA (Consumindo Endpoint Customizado)
+  // GESTÃO DA FROTA
   // ==========================================
   carregarFrota() {
     if (!this.usuarioLogado.empresaId) {
-      console.warn("Afrota não pode ser carregada porque o id da empresa está nulo.");
+      console.warn("A frota não pode ser carregada porque o id da empresa está nulo.");
       return;
     }
 
-    // 🔥 ALTERAÇÃO AQUI: Agora batendo no endpoint otimizado que traz apenas os carros da empresa
     this.http.get<any[]>(`http://localhost:8080/api/transport/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders()).subscribe({
       next: (dados) => {
         console.log('Frota exclusiva retornada pelo backend:', dados);
         if (Array.isArray(dados)) {
-          // Como o backend já filtrou, mapeamos as chaves diretamente com segurança
           this.listaMinhaFrota = dados.map((t: any) => ({
             id: t.id || t.idTransporte || t.id_transporte,
             modelo: t.modelo || 'Modelo Não Definido',
-            capacidade: t.vagas || t.capacidade || 0,
+            capacidade: t.capacidade || t.vagas || 0,
             status: t.status || 'ATIVO'
           }));
 
-          // Alimenta o indicador de veículos com status ativo
           this.totalVeiculosAtivos = this.listaMinhaFrota.filter(v => v.status === 'ATIVO').length;
         }
         this.cdr.detectChanges();
@@ -184,12 +180,11 @@ export class DashboardEmpresaComponent implements OnInit {
       return;
     }
 
-    // Mapeia o payload garantindo que o ID correto da empresa vai no corpo da requisição do banco
     const payload = {
       modelo: dadosForm.modelo,
       capacidade: Number(dadosForm.capacidade),
       status: dadosForm.status,
-      empresaId: Number(this.usuarioLogado.empresaId) // Vinculando a empresa atual
+      empresaId: Number(this.usuarioLogado.empresaId)
     };
 
     this.http.post('http://localhost:8080/api/transport/cadastrar', payload, this.obterHeaders()).subscribe({
@@ -215,86 +210,79 @@ export class DashboardEmpresaComponent implements OnInit {
   }
 
   // ==========================================
-  // PROCESSAMENTO DO PAINEL (Rotas, Passagens e Receita)
+  // PROCESSAMENTO DO PAINEL (Rotas e Viagens da Empresa)
   // ==========================================
   carregarOperacoes() {
+    // 1. Carrega as rotas comerciais
     this.http.get<any[]>('http://localhost:8080/api/rotas', this.obterHeaders()).subscribe({
       next: (dados) => {
         this.listaMinhasRotas = dados;
-        this.cdr.detectChanges();
+        if (this.cdr) this.cdr.detectChanges();
       },
       error: (err) => console.error('Erro ao ler rotas:', err)
     });
 
-    if (!this.usuarioLogado.empresaId) return;
+    if (!this.usuarioLogado || !this.usuarioLogado.empresaId) return;
 
-    this.http.get<any[]>('http://localhost:8080/api/viagem/listar-todas', this.obterHeaders()).subscribe({
+    // 2. Consome o endpoint trazendo as viagens reais
+    this.http.get<any[]>(`http://localhost:8080/api/viagem/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders()).subscribe({
       next: (dados) => {
         if (Array.isArray(dados)) {
-          console.log('Lista bruta de viagens vinda do servidor:', dados);
+          console.log('Viagens retornadas do banco:', dados);
 
-          // Filtra trazendo apenas as escalas associadas aos veículos ou rotas da empresa
-          this.listaMinhasViagens = dados.filter((v: any) => {
-            // 1. Tenta varrer todas as propriedades possíveis de relacionamento direto ou aninhado
-            const idEmpresaViagem = v.empresaId ||
-              v.empresa_id ||
-              v.transport?.empresaId ||
-              v.transport?.empresa?.id ||
-              v.veiculo?.empresaId ||
-              v.veiculo?.empresa?.id ||
-              v.rota?.empresaId ||
-              v.rota?.empresa?.id;
+          this.listaMinhasViagens = dados.map((v: any) => {
+            const rotaInfo = v.rota || {};
+            const veiculoInfo = v.transport || v.veiculo || {};
 
-            // 2. CASO SEJA UM DTO SIMPLIFICADO (que só traz IDs numéricos brutos como transportId ou veiculoId):
-            // Cruzamos com a sua listaMinhaFrota que já está carregada no Angular da Empresa
-            const idDoCarro = v.transportId || v.transport_id || v.veiculoId || v.veiculo_id || v.transport?.id || v.veiculo?.id;
+            const capacidadeDefinida = v.capacidade || veiculoInfo.capacidade || veiculoInfo.vagas || 2;
+            const disponiveis = v.vagasDisponiveis !== undefined ? v.vagasDisponiveis : capacidadeDefinida;
 
-            if (idDoCarro) {
-              const pertenceAFrota = this.listaMinhaFrota.some(f => Number(f.id) === Number(idDoCarro));
-              if (pertenceAFrota) return true;
-            }
-
-            return Number(idEmpresaViagem) === Number(this.usuarioLogado.empresaId);
+            return {
+              id: v.id,
+              origem: rotaInfo.origem || 'Não Definida',
+              ufOrigem: rotaInfo.ufOrigem || '',
+              destino: rotaInfo.destino || 'Não Definido',
+              ufDestino: rotaInfo.ufDestino || '',
+              dataSaida: v.dataSaida || 'Horário não agendado',
+              capacidade: capacidadeDefinida,
+              vagasDisponiveis: disponiveis,
+              valor: v.valor || rotaInfo.valorBase || rotaInfo.valor || 120.00
+            };
           });
 
+          // Processamento financeiro interno do bloco next
           let passageirosContados = 0;
           let receitaSomada = 0;
 
-          this.listaMinhasViagens.forEach(viagem => {
-            // Adaptação para aceitar tanto 'capacidade' quanto 'vagas' ou buscar do objeto aninhado
-            const capacidadeTotal = viagem.capacidade || viagem.transport?.capacidade || viagem.veiculo?.capacidade || 42;
-            const vagasRestantes = viagem.vagasDisponiveis !== undefined ? viagem.vagasDisponiveis : capacidadeTotal;
-
-            const passagensCompradas = capacidadeTotal - vagasRestantes;
-
+          this.listaMinhasViagens.forEach((viagem: any) => {
+            const passagensCompradas = viagem.capacidade - viagem.vagasDisponiveis;
             if (passagensCompradas > 0) {
               passageirosContados += passagensCompradas;
-
-              // Se 'valor' vier zerado, tenta ler do 'valorBase' ou do objeto da rota aninhada
-              const precoPassagem = viagem.valor || viagem.valorBase || viagem.rota?.valorBase || viagem.rota?.valor || 120.00;
-              receitaSomada += (passagensCompradas * precoPassagem);
+              receitaSomada += (passagensCompradas * viagem.valor);
             }
           });
 
           this.totalPassageirosAtendidos = passageirosContados;
           this.receitaOperacional = receitaSomada;
         }
-        this.cdr.detectChanges();
+        if (this.cdr) this.cdr.detectChanges();
       },
-      error: (err) => console.error('Erro ao processar passagens vendidas no painel:', err)
+      error: (err: any) => {
+        console.error('Erro ao ler viagens dedicadas por empresa:', err);
+        this.listaMinhasViagens = [];
+      }
     });
   }
 
   salvarItinerarioRota(dadosForm: any, form: NgForm) {
     if (form.invalid) return;
 
-    // 🔥 ALINHAMENTO DE CHAVES: Agora combinando perfeitamente com o DTO do Java
     const payload = {
       origem: dadosForm.origem,
       ufOrigem: dadosForm.ufOrigem.toUpperCase(),
       destino: dadosForm.destino,
       ufDestino: dadosForm.ufDestino.toUpperCase(),
-      valorBase: Number(dadosForm.valorBase),     // ✅ Corrigido para valorBase
+      valorBase: Number(dadosForm.valorBase),
       horarioPadrao: dadosForm.horarioPadrao
     };
 
@@ -307,6 +295,7 @@ export class DashboardEmpresaComponent implements OnInit {
       error: (err) => console.error('Erro ao cadastrar rota no servidor:', err)
     });
   }
+
   agendarViagem(dadosForm: any, form: NgForm) {
     const rotaIdNum = parseInt(this.idRotaSelecionada, 10);
     const transportIdNum = parseInt(this.idTransporteSelecionado, 10);

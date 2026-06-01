@@ -65,6 +65,7 @@ public class SecurityConfigurations {
                     req.requestMatchers(HttpMethod.GET,"api/viagem/pesquisar").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/viagem/listar-passageiros/{viagemId}").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/viagem/listar-todas").authenticated();
+                    req.requestMatchers(HttpMethod.GET,"api/viagem/buscar-por-empresa/{empresaId}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.GET,"api/rotas").authenticated();
                     req.requestMatchers(HttpMethod.GET,"api/empresa/listar-todas").authenticated();
 

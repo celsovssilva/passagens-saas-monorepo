@@ -19,4 +19,5 @@ public interface ViagemService {
      void deleteViagem(Long idViagem);
      List<ViagemResponse>listarTodasAsViagensRealizadas();
      List<ViagemResponse> buscarViagem(String origem, String destino, LocalDateTime data);
+     List<Viagem> listarViagensPorEmpresa(Long empresaId);
 }

@@ -54,4 +54,9 @@ public class ViagemController {
     public ResponseEntity<List<ViagemResponse>> listarTodasViagens() {
         return ResponseEntity.ok(viagemService.listarTodasAsViagensRealizadas());
     }
+    @GetMapping("/buscar-por-empresa/{empresaId}")
+    public ResponseEntity<List<Viagem>> listarPorEmpresa(@PathVariable Long empresaId) {
+        List<Viagem> viagens = viagemService.listarViagensPorEmpresa(empresaId);
+        return ResponseEntity.ok(viagens);
+    }
 }

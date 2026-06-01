@@ -19,5 +19,6 @@ public interface ViagemRepository extends JpaRepository<Viagem, Long> {
     @Transactional
     @Query("DELETE FROM Viagem v WHERE v.id = :id")
     void deletarPorId(Long id);
-
+    @Query("SELECT v FROM Viagem v LEFT JOIN FETCH v.transport LEFT JOIN FETCH v.rota WHERE v.transport.empresa.id = :empresaId")
+    List<Viagem> findByEmpresaId(@Param("empresaId") Long empresaId);
 }

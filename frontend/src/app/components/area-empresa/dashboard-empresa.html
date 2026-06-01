@@ -1,60 +1,83 @@
-<div class="dashboard-container">
-
+<div class="container-dashboard">
   <aside class="sidebar">
-    <div class="sidebar-header">
-      <h3>Painel Corporativo</h3>
-      <span class="empresa-nome">{{ dadosEmpresa.razaoSocial || 'Carregando Empresa...' }}</span>
+    <div class="logo-area">
+      <h2>Painel Empresa</h2>
     </div>
-
-    <nav class="sidebar-menu">
-      <button [class.active]="telaAtiva === 'inicio'" (click)="definirTela('inicio')">
-        📊 Início / Viagens
+    <nav class="menu">
+      <button (click)="definirTela('inicio')" [class.active]="telaAtiva === 'inicio'">
+        <i class="icon-home"></i> Início / Operações
       </button>
-      <button [class.active]="telaAtiva === 'frota'" (click)="definirTela('frota')">
-        🚌 Minha Frota
+      <button (click)="definirTela('rotas')" [class.active]="telaAtiva === 'rotas'">
+        <i class="icon-route"></i> Criar Itinerários
       </button>
-      <button [class.active]="telaAtiva === 'rotas'" (click)="definirTela('rotas')">
-        🗺️ Rotas e Escalas
+      <button (click)="definirTela('frota')" [class.active]="telaAtiva === 'frota'">
+        <i class="icon-bus"></i> Minha Frota
       </button>
-      <button [class.active]="telaAtiva === 'perfil'" (click)="definirTela('perfil')">
-        ⚙️ Dados da Empresa
+      <button (click)="definirTela('perfil')" [class.active]="telaAtiva === 'perfil'">
+        <i class="icon-user"></i> Dados Cadastrais
       </button>
     </nav>
-
-    <div class="sidebar-footer">
-      <button class="btn-logout" (click)="logout()">Sair do Sistema</button>
-    </div>
+    <button class="btn-logout" (click)="logout()">Sair do Sistema</button>
   </aside>
 
-  <main class="main-content">
-
-    <div class="top-welcome-bar">
-      <div class="welcome-txt">
-        <h2>Olá, <span>{{ dadosEmpresa.razaoSocial || 'Parceiro' }}</span></h2>
-        <small>Acessando com nível de permissão: <strong>EMPRESA</strong></small>
-      </div>
-      <span class="user-badge-mail">{{ usuarioLogado.email }}</span>
-    </div>
-
-    <div class="cards-indicadores-row">
-      <div class="card-stat blue">
-        <h4>Passagens Compradas</h4>
-        <p class="stat-number">{{ totalPassageirosAtendidos }}</p>
-      </div>
-      <div class="card-stat green">
-        <h4>Ônibus em Operação</h4>
-        <p class="stat-number">{{ totalVeiculosAtivos }}</p>
-      </div>
-      <div class="card-stat orange">
-        <h4>Receita Líquida Estimada</h4>
-        <p class="stat-number">{{ receitaOperacional | currency:'BRL':'symbol':'1.2-2' }}</p>
-      </div>
-    </div>
+  <main class="content">
+    <header class="main-header">
+      <h1>Olá, {{ dadosEmpresa.razaoSocial || usuarioLogado.email }}</h1>
+      <p>Acessando com nível de permissão: <strong>{{ usuarioLogado.role }}</strong></p>
+    </header>
 
     <div *ngIf="telaAtiva === 'inicio'">
-      <div class="card-box">
-        <h3>Viagens em Andamento / Escaladas</h3>
-        <table class="data-table">
+      <section class="cards-indicadores">
+        <div class="card">
+          <h3>Passagens Compradas</h3>
+          <p class="valor">{{ totalPassageirosAtendidos }}</p>
+        </div>
+        <div class="card">
+          <h3>Ônibus em Operação</h3>
+          <p class="valor">{{ totalVeiculosAtivos }}</p>
+        </div>
+        <div class="card text-verde">
+          <h3>Receita Líquida Estimada</h3>
+          <p class="valor">{{ receitaOperacional | currency:'BRL':'symbol':'1.2-2' }}</p>
+        </div>
+      </section>
+
+      <section class="secao-form-cadastro margin-top">
+        <h2>2. Escalar Ônibus para Viagem</h2>
+        <form #formViagem="ngForm" (ngSubmit)="agendarViagem(formViagem.value, formViagem)">
+          <div class="grid-form">
+            <div class="grupo-campo">
+              <label>Selecione o Itinerário Base:</label>
+              <select name="idRota" [(ngModel)]="idRotaSelecionada" required>
+                <option value="" disabled hidden>Escolha uma rota cadastrada</option>
+                <option *ngFor="let r of listaMinhasRotas" [value]="r.id">
+                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) - {{ r.horarioPadrao || r.horario }}
+                </option>
+              </select>
+            </div>
+
+            <div class="grupo-campo">
+              <label>Selecione o Veículo Disponível:</label>
+              <select name="idTransporte" [(ngModel)]="idTransporteSelecionado" required>
+                <option value="" disabled hidden>Escolha um ônibus da frota</option>
+                <option *ngFor="let v of listaMinhaFrota" [value]="v.id">
+                  {{ v.modelo }} (Capacidade: {{ v.capacidade }} assentos)
+                </option>
+              </select>
+            </div>
+
+            <div class="grupo-campo">
+              <label>Data e Horário de Saída:</label>
+              <input type="datetime-local" name="dataSaida" ngModel required />
+            </div>
+          </div>
+          <button type="submit" class="btn-salvar" [disabled]="formViagem.invalid">Confirmar e Agendar Viagem</button>
+        </form>
+      </section>
+
+      <section class="secao-listagem margin-top">
+        <h2>Viagens em Andamento / Escaladas</h2>
+        <table class="tabela-dados">
           <thead>
           <tr>
             <th>ID Viagem</th>
@@ -67,185 +90,144 @@
           <tbody>
           <tr *ngFor="let viagem of listaMinhasViagens">
             <td><strong>#{{ viagem.id }}</strong></td>
-            <td>📍 {{ viagem.origem }} ({{ viagem.ufOrigem }}) → {{ viagem.destino }} ({{ viagem.ufDestino }})</td>
-            <td>📅 {{ viagem.dataSaida | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ viagem.origem }} ({{ viagem.ufOrigem }}) &rarr; {{ viagem.destino }} ({{ viagem.ufDestino }})</td>
+            <td>{{ viagem.dataSaida }}</td>
             <td>
-                <span class="vagas-pill" [class.red]="viagem.vagasDisponiveis === 0">
-                  🪑 {{ viagem.vagasDisponiveis }} livres de {{ viagem.capacidade }}
+                <span class="badge-vagas">
+                  {{ viagem.capacidade - viagem.vagasDisponiveis }} comprados / {{ viagem.capacidade }} totais
                 </span>
             </td>
             <td>
-              <button class="btn-table-delete" (click)="excluirViagem(viagem.id)">Cancelar Escala</button>
+              <button class="btn-deletar" (click)="excluirViagem(viagem.id)">Cancelar Escala</button>
             </td>
           </tr>
           <tr *ngIf="listaMinhasViagens.length === 0">
-            <td colspan="5" class="txt-center">Nenhuma escala de viagem registrada para os seus veículos.</td>
+            <td colspan="5" class="sem-dados">Nenhuma escala de viagem registrada para os seus veículos.</td>
           </tr>
           </tbody>
         </table>
-      </div>
+      </section>
+    </div>
+
+    <div *ngIf="telaAtiva === 'rotas'">
+      <section class="secao-form-cadastro">
+        <h2>1. Cadastrar Novo Itinerário Base</h2>
+        <form #formRota="ngForm" (ngSubmit)="salvarItinerarioRota(formRota.value, formRota)">
+          <div class="grid-form">
+            <div class="grupo-campo">
+              <label>Cidade de Origem:</label>
+              <input type="text" name="origem" ngModel placeholder="Ex: Maceió" required />
+            </div>
+            <div class="grupo-campo">
+              <label>UF Origem:</label>
+              <input type="text" name="ufOrigem" ngModel maxlength="2" placeholder="Ex: AL" required />
+            </div>
+            <div class="grupo-campo">
+              <label>Cidade de Destino:</label>
+              <input type="text" name="destino" ngModel placeholder="Ex: Atalaia" required />
+            </div>
+            <div class="grupo-campo">
+              <label>UF Destino:</label>
+              <input type="text" name="ufDestino" ngModel maxlength="2" placeholder="Ex: AL" required />
+            </div>
+            <div class="grupo-campo">
+              <label>Valor de Tabela da Passagem (R$):</label>
+              <input type="number" name="valorBase" ngModel placeholder="Ex: 45.00" step="0.01" required />
+            </div>
+            <div class="grupo-campo">
+              <label>Horário Padrão de Linha:</label>
+              <input type="text" name="horarioPadrao" ngModel placeholder="Ex: 08:30" required />
+            </div>
+          </div>
+          <button type="submit" class="btn-salvar" [disabled]="formRota.invalid">Criar Nova Linha Comercial</button>
+        </form>
+      </section>
     </div>
 
     <div *ngIf="telaAtiva === 'frota'">
-      <div class="card-box">
-        <h3>➕ Incluir Ônibus na Frota</h3>
-        <form #formTransporte="ngForm" (ngSubmit)="salvarVeiculo(formTransporte.value, formTransporte)" class="form-row-three">
-          <div class="input-block">
-            <label>Modelo do Ônibus:</label>
-            <input type="text" name="modelo" ngModel required placeholder="Ex: Marcopolo Paradiso G8" class="form-field">
+      <section class="secao-form-cadastro">
+        <h2>Inserir Novo Ônibus à Frota Dedicada</h2>
+        <form #formFrota="ngForm" (ngSubmit)="salvarVeiculo(formFrota.value, formFrota)">
+          <div class="grid-form">
+            <div class="grupo-campo">
+              <label>Modelo / Identificação do Carro:</label>
+              <input type="text" name="modelo" ngModel placeholder="Ex: Marcopolo Paradiso G8" required />
+            </div>
+            <div class="grupo-campo">
+              <label>Capacidade Total de Passageiros:</label>
+              <input type="number" name="capacidade" ngModel placeholder="Ex: 42" required />
+            </div>
+            <div class="grupo-campo">
+              <label>Status Operacional Inicial:</label>
+              <select name="status" ngModel="ATIVO" required>
+                <option value="ATIVO">Disponível para Viagens (ATIVO)</option>
+                <option value="MANUTENCAO">Em Oficina (MANUTENÇÃO)</option>
+              </select>
+            </div>
           </div>
-          <div class="input-block">
-            <label>Capacidade (Assentos):</label>
-            <input type="number" name="capacidade" ngModel required placeholder="Ex: 42" class="form-field">
-          </div>
-          <div class="input-block">
-            <label>Status Operacional:</label>
-            <select name="status" ngModel="ATIVO" required class="form-field">
-              <option value="ATIVO">✅ ATIVO</option>
-              <option value="MANUTENCAO">🔧 MANUTENÇÃO</option>
-              <option value="INATIVO">❌ INATIVO</option>
-            </select>
-          </div>
-          <div style="grid-column: span 3; text-align: right; margin-top: 5px;">
-            <button type="submit" [disabled]="formTransporte.invalid" class="btn-primary-action bg-btn-green">
-              💾 Cadastrar Veículo na Frota
-            </button>
-          </div>
+          <button type="submit" class="btn-salvar" [disabled]="formFrota.invalid">Cadastrar Veículo</button>
         </form>
-      </div>
+      </section>
 
-      <div class="card-box">
-        <h3>Meus Veículos Mapeados no Banco</h3>
-        <table class="data-table">
+      <section class="secao-listagem margin-top">
+        <h2>Frota Ativa Sob Sua Gestão</h2>
+        <table class="tabela-dados">
           <thead>
           <tr>
-            <th>ID Veículo</th>
-            <th>Modelo / Marca</th>
-            <th>Capacidade Física</th>
-            <th>Situação Atual</th>
+            <th>ID Interno</th>
+            <th>Modelo / Descrição</th>
+            <th>Assentos Físicos</th>
+            <th>Status</th>
             <th>Ações</th>
           </tr>
           </thead>
           <tbody>
           <tr *ngFor="let veiculo of listaMinhaFrota">
-            <td>#{{ veiculo.id }}</td>
-            <td><strong>{{ veiculo.modelo }}</strong></td>
-            <td>🪑 {{ veiculo.capacidade }} vagas mapeadas</td>
+            <td><strong>#{{ veiculo.id }}</strong></td>
+            <td>{{ veiculo.modelo }}</td>
+            <td>{{ veiculo.capacidade }} assentos disponíveis</td>
             <td>
-              <span class="status-pill">{{ veiculo.status }}</span>
+                <span class="status-tag" [ngClass]="veiculo.status.toLowerCase()">
+                  {{ veiculo.status }}
+                </span>
             </td>
             <td>
-              <button class="btn-table-delete" (click)="deletarTransporte(veiculo.id)">Deletar</button>
+              <button class="btn-deletar" (click)="deletarTransporte(veiculo.id)">Remover da Frota</button>
             </td>
           </tr>
           <tr *ngIf="listaMinhaFrota.length === 0">
-            <td colspan="5" class="txt-center">Sua empresa ainda não possui nenhum veículo registrado.</td>
+            <td colspan="5" class="sem-dados">Nenhum veículo vinculado a sua empresa no momento.</td>
           </tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <div *ngIf="telaAtiva === 'rotas'">
-      <div class="grid-2-colunas">
-
-        <div class="card-box">
-          <h3>1. Cadastrar Itinerário Base</h3>
-          <form #formRota="ngForm" (ngSubmit)="salvarItinerarioRota(formRota.value, formRota)">
-            <div class="input-block">
-              <label>Cidade Origem:</label>
-              <input type="text" name="origem" ngModel required class="form-field" placeholder="Ex: São Paulo">
-            </div>
-            <div class="input-block">
-              <label>UF Origem:</label>
-              <input type="text" name="ufOrigem" ngModel required maxLength="2" class="form-field" placeholder="Ex: SP">
-            </div>
-            <div class="input-block">
-              <label>Cidade Destino:</label>
-              <input type="text" name="destino" ngModel required class="form-field" placeholder="Ex: Rio de Janeiro">
-            </div>
-            <div class="input-block">
-              <label>UF Destino:</label>
-              <input type="text" name="ufDestino" ngModel required maxLength="2" class="form-field" placeholder="Ex: RJ">
-            </div>
-            <div class="input-block">
-              <label>Preço Base da Passagem (R$):</label>
-              <input type="number" name="valorBase" ngModel required class="form-field" placeholder="0.00">
-            </div>
-            <div class="input-block">
-              <label>Horário Comercial Padrão:</label>
-              <input type="time" name="horarioPadrao" ngModel required class="form-field">
-            </div>
-            <button type="submit" [disabled]="formRota.invalid" class="btn-primary-action" style="width: 100%;">
-              Criar Nova Linha
-            </button>
-          </form>
-        </div>
-
-        <div class="card-box">
-          <h3>2. Escalar Ônibus para Viagem</h3>
-          <form #formViagem="ngForm" (ngSubmit)="agendarViagem(formViagem.value, formViagem)">
-            <div class="input-block">
-              <label>Selecione o Itinerário:</label>
-              <select name="rotaId" [(ngModel)]="idRotaSelecionada" required class="form-field">
-                <option value="" disabled selected>Escolha uma rota...</option>
-                <option *ngFor="let r of listaMinhasRotas" [value]="r.id">
-                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }})
-                </option>
-              </select>
-            </div>
-
-            <div class="input-block">
-              <label>Selecione o Ônibus da Frota:</label>
-              <select name="transportId" [(ngModel)]="idTransporteSelecionado" required class="form-field">
-                <option value="" disabled selected>Escolha um veículo ativo...</option>
-                <option *ngFor="let veiculo of listaMinhaFrota" [value]="veiculo.id" [disabled]="veiculo.status !== 'ATIVO'">
-                  {{ veiculo.modelo }} ({{ veiculo.capacidade }} lug) {{ veiculo.status !== 'ATIVO' ? '[Indisponível]' : '' }}
-                </option>
-              </select>
-            </div>
-
-            <div class="input-block">
-              <label>Data e Horário de Partida:</label>
-              <input type="datetime-local" name="dataSaida" ngModel required class="form-field">
-            </div>
-
-            <button type="submit" [disabled]="formViagem.invalid" class="btn-primary-action bg-btn-green" style="width: 100%; margin-top: 15px;">
-              🗓️ Confirmar e Agendar Viagem
-            </button>
-          </form>
-        </div>
-
-      </div>
+      </section>
     </div>
 
     <div *ngIf="telaAtiva === 'perfil'">
-      <div class="card-box max-w-600">
-        <h3>Atualizar Informações da Empresa</h3>
+      <section class="secao-form-cadastro">
+        <h2>Dados Jurídicos da Empresa</h2>
         <form #formPerfil="ngForm" (ngSubmit)="atualizarPerfil(formPerfil)">
-          <div class="input-block">
-            <label>Razão Social:</label>
-            <input type="text" [(ngModel)]="dadosEmpresa.razaoSocial" name="razaoSocial" required class="form-field field-disabled" readonly>
-            <span class="txt-muted">A alteração cadastral da Razão Social exige contato com o Admin geral.</span>
+          <div class="grid-form">
+            <div class="grupo-campo">
+              <label>Razão Social:</label>
+              <input type="text" name="razaoSocial" [(ngModel)]="dadosEmpresa.razaoSocial" required />
+            </div>
+            <div class="grupo-campo">
+              <label>CNPJ Corporativo:</label>
+              <input type="text" name="cnpj" [(ngModel)]="dadosEmpresa.cnpj" readonly />
+            </div>
+            <div class="grupo-campo">
+              <label>Telefone Comercial:</label>
+              <input type="text" name="telefone" [(ngModel)]="dadosEmpresa.telefone" />
+            </div>
+            <div class="grupo-campo">
+              <label>Endereço / Sede Administrativa:</label>
+              <input type="text" name="endereco" [(ngModel)]="dadosEmpresa.endereco" />
+            </div>
           </div>
-          <div class="input-block">
-            <label>CNPJ:</label>
-            <input type="text" [(ngModel)]="dadosEmpresa.cnpj" name="cnpj" required class="form-field field-disabled" readonly>
-          </div>
-          <div class="input-block">
-            <label>Telefone Comercial de Contato:</label>
-            <input type="text" [(ngModel)]="dadosEmpresa.telefone" name="telefone" required class="form-field" placeholder="(00) 00000-0000">
-          </div>
-          <div class="input-block">
-            <label>Endereço de Garagem / Sede:</label>
-            <input type="text" [(ngModel)]="dadosEmpresa.endereco" name="endereco" required class="form-field" placeholder="Rua, Número, Bairro, Cidade - UF">
-          </div>
-          <button type="submit" [disabled]="formPerfil.invalid" class="btn-primary-action" style="margin-top: 15px;">
-            💾 Salvar Alterações
-          </button>
+          <button type="submit" class="btn-salvar" [disabled]="formPerfil.invalid">Atualizar Informações Comerciais</button>
         </form>
-      </div>
+      </section>
     </div>
-
   </main>
 </div>
