@@ -38,7 +38,7 @@
 
     <div class="cards-indicadores-row">
       <div class="card-stat blue">
-        <h4>Passageiros Atendidos</h4>
+        <h4>Passagens Compradas</h4>
         <p class="stat-number">{{ totalPassageirosAtendidos }}</p>
       </div>
       <div class="card-stat green">
@@ -46,7 +46,7 @@
         <p class="stat-number">{{ totalVeiculosAtivos }}</p>
       </div>
       <div class="card-stat orange">
-        <h4>Receita Estimada</h4>
+        <h4>Receita Líquida Estimada</h4>
         <p class="stat-number">{{ receitaOperacional | currency:'BRL':'symbol':'1.2-2' }}</p>
       </div>
     </div>
@@ -79,7 +79,7 @@
             </td>
           </tr>
           <tr *ngIf="listaMinhasViagens.length === 0">
-            <td colspan="5" class="txt-center">Nenhuma viagem ativa encontrada no cronograma.</td>
+            <td colspan="5" class="txt-center">Nenhuma escala de viagem registrada para os seus veículos.</td>
           </tr>
           </tbody>
         </table>
@@ -92,7 +92,7 @@
         <form #formTransporte="ngForm" (ngSubmit)="salvarVeiculo(formTransporte.value, formTransporte)" class="form-row-three">
           <div class="input-block">
             <label>Modelo do Ônibus:</label>
-            <input type="text" name="modelo" ngModel required placeholder="Ex: Mercedes-Benz G7 Leito" class="form-field">
+            <input type="text" name="modelo" ngModel required placeholder="Ex: Marcopolo Paradiso G8" class="form-field">
           </div>
           <div class="input-block">
             <label>Capacidade (Assentos):</label>
@@ -115,7 +115,7 @@
       </div>
 
       <div class="card-box">
-        <h3>Meus Veículos Mapeados</h3>
+        <h3>Meus Veículos Mapeados no Banco</h3>
         <table class="data-table">
           <thead>
           <tr>
@@ -139,7 +139,7 @@
             </td>
           </tr>
           <tr *ngIf="listaMinhaFrota.length === 0">
-            <td colspan="5" class="txt-center">Nenhum ônibus cadastrado até o momento.</td>
+            <td colspan="5" class="txt-center">Sua empresa ainda não possui nenhum veículo registrado.</td>
           </tr>
           </tbody>
         </table>
@@ -187,7 +187,7 @@
           <form #formViagem="ngForm" (ngSubmit)="agendarViagem(formViagem.value, formViagem)">
             <div class="input-block">
               <label>Selecione o Itinerário:</label>
-              <select name="rotaId" ngModel required class="form-field">
+              <select name="rotaId" [(ngModel)]="idRotaSelecionada" required class="form-field">
                 <option value="" disabled selected>Escolha uma rota...</option>
                 <option *ngFor="let r of listaMinhasRotas" [value]="r.id">
                   {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }})
@@ -197,10 +197,10 @@
 
             <div class="input-block">
               <label>Selecione o Ônibus da Frota:</label>
-              <select name="transportId" ngModel required class="form-field">
+              <select name="transportId" [(ngModel)]="idTransporteSelecionado" required class="form-field">
                 <option value="" disabled selected>Escolha um veículo ativo...</option>
                 <option *ngFor="let veiculo of listaMinhaFrota" [value]="veiculo.id" [disabled]="veiculo.status !== 'ATIVO'">
-                  {{ veiculo.modelo }} ({{ veiculo.capacidade }} lug) {{ veiculo.status !== 'ATIVO' ? '[Em manutenção]' : '' }}
+                  {{ veiculo.modelo }} ({{ veiculo.capacidade }} lug) {{ veiculo.status !== 'ATIVO' ? '[Indisponível]' : '' }}
                 </option>
               </select>
             </div>

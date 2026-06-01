@@ -12,4 +12,5 @@ public interface TransportService {
     Transport atualizar(Long id,TransportRequest p);
     void deletar(Long id);
     List<TransportResponse> listarTodas();
+    List<Transport> listarPorEmpresa(Long empresaId);
 }

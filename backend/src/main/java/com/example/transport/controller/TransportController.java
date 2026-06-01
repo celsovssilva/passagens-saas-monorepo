@@ -56,4 +56,9 @@ public class TransportController {
     public ResponseEntity<List<TransportResponse>> buscarTodos(){
         return ResponseEntity.ok(transportService.listarTodas());
     }
+    @GetMapping("/buscar-por-empresa/{empresaId}")
+    public ResponseEntity<List<Transport>> listarPorEmpresa(@PathVariable Long empresaId) {
+        List<Transport> frota = transportService.listarPorEmpresa(empresaId);
+        return ResponseEntity.ok(frota);
+    }
 }

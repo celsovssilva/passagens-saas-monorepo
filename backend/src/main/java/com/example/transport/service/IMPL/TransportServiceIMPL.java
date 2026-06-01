@@ -1,6 +1,8 @@
 package com.example.transport.service.IMPL;
 
+import com.example.transport.entity.Empresa;
 import com.example.transport.entity.Transport;
+import com.example.transport.repository.EmpresaRepository;
 import com.example.transport.repository.TransportRepository;
 import com.example.transport.request.TransportRequest;
 import com.example.transport.response.TransportResponse;
@@ -15,6 +17,8 @@ public class TransportServiceIMPL implements TransportService {
 
     @Autowired
     TransportRepository transportRepository;
+    @Autowired
+    EmpresaRepository empresaRepository;
     @Override
     public Transport buscarPorId(Long id) {
         return transportRepository.findById(id).get();
@@ -22,16 +26,23 @@ public class TransportServiceIMPL implements TransportService {
 
     @Override
     public Transport cadastrar(TransportRequest p) {
-        if(p.capacidade() <= 0){
+        if(p.capacidade() <= 0) {
             throw new RuntimeException("Capacidade deve ser maior que zero");
         }
+
         Transport transport = new Transport();
         transport.setModelo(p.modelo());
         transport.setVagas(p.capacidade());
         transport.setStatus(p.status());
+
+        if (p.empresaId() != null) {
+            Empresa empresa = empresaRepository.findById(p.empresaId())
+                    .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+            transport.setEmpresa(empresa);
+        }
+
         return transportRepository.save(transport);
     }
-
     @Override
     public Transport atualizar(Long id, TransportRequest p) {
         Transport transport = transportRepository.findById(id)
@@ -51,5 +62,11 @@ public class TransportServiceIMPL implements TransportService {
     public List<TransportResponse> listarTodas() {
         List<Transport> t =transportRepository.findAll();
         return t.stream().map(TransportResponse::new).toList();
+    }
+
+    @Override
+    public List<Transport> listarPorEmpresa(Long empresaId) {
+
+        return transportRepository.findByEmpresaId(empresaId);
     }
 }

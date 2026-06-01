@@ -23,7 +23,8 @@ public class User implements UserDetails {
     private String email;
     private String password;
 
-    @OneToMany
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
     private List<Empresa> empresas;
     @OneToMany
     private List<Passageiro> passageiro;

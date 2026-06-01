@@ -56,6 +56,7 @@ public class SecurityConfigurations {
                     req.requestMatchers(HttpMethod.PUT,"api/transport/atualizar/{id}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.GET,"api/transport/buscar/{id}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.GET,"api/transport/listar-todas").hasAnyRole("ADMIN","EMPRESA");
+                    req.requestMatchers(HttpMethod.GET,"api/transport/buscar-por-empresa/{empresaId}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.DELETE,"api/transport/deletar/{id}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.DELETE,"api/viagem/deletar/{idViagem}").hasAnyRole("ADMIN","EMPRESA");
                     req.requestMatchers(HttpMethod.POST,"api/viagem/cadastrar").hasAnyRole("ADMIN","EMPRESA");

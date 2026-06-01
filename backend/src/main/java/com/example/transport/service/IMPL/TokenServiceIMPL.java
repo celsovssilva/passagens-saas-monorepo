@@ -21,16 +21,23 @@ public class TokenServiceIMPL  implements TokenService {
     public String gerarToken(User user) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
-            return JWT.create()
+
+            var tokenBuilder = JWT.create()
                     .withIssuer("api-transport")
                     .withSubject(user.getEmail())
-                    .withClaim("role",user.getRole().name())
-                    .withExpiresAt(dataExpiracao())
-                    .sign(algorithm);
-        } catch (JWTCreationException e) {
-            throw new RuntimeException("erro ao gerar token" + e);
-        }
+                    .withClaim("role", user.getRole().name())
+                    .withExpiresAt(dataExpiracao());
+            if ("EMPRESA".equals(user.getRole().name())
+                    && user.getEmpresas() != null
+                    && !user.getEmpresas().isEmpty()) {
+                Long idEmpresa = user.getEmpresas().get(0).getId();
+                tokenBuilder.withClaim("empresaId", idEmpresa);
+            }
 
+            return tokenBuilder.sign(algorithm);
+        } catch (JWTCreationException e) {
+            throw new RuntimeException("erro ao gerar token " + e);
+        }
     }
 
     @Override
