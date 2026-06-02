@@ -88,6 +88,13 @@ export class ViagemCompraService {
       this.obterHeaders()
     );
   }
+  confirmarPagamento(idCompra: number): Observable<any> {
+    return this.http.put<any>(
+        `${this.baseUrl}/compra/atualizar/${idCompra}`,
+        {}, // O body vai vazio porque o Java só espera a PathVariable
+        this.obterHeaders()
+    );
+  }
 
   obterHistorico(userId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/compra/historico/${userId}`, this.obterHeaders());

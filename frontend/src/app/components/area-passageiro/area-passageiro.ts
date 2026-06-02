@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import {
   ViagemCompraService,
-  ViagemResponse,
-  PassagemResponse,
   CompraRequestPayload
 } from '../../service/viagem-compra.service';
 
@@ -34,21 +32,24 @@ export class AreaPassageiroComponent implements OnInit {
   ];
 
   busca = { origem: '', destino: '', data: '' };
-  viagensDisponiveis: ViagemResponse[] = [];
+
+  // Mudado para any[] para evitar o erro de tipagem estrita no HTML com rota/transport
+  viagensDisponiveis: any[] = [];
   pesquisaFeita: boolean = false;
 
-  minhasPassagens: PassagemResponse[] = [];
+  // Mudado para any[] para evitar o erro de tipagem com id/cpf/viagem no histórico
+  minhasPassagens: any[] = [];
 
   mensagemSucesso: string = '';
   mensagemErro: string = '';
 
   dadosPerfilPassageiro: any = {
-    nome: 'Passageiro',
+    nome: '',
     sobrenome: '',
     phone: '',
     idade: 25,
     email: '',
-    cpf: '000.000.000-00',
+    cpf: '',
   };
 
   listaRotasGerais: any[] = [];
@@ -56,8 +57,8 @@ export class AreaPassageiroComponent implements OnInit {
   listaEmpresasGerais: any[] = [];
 
   constructor(
-    private apiService: ViagemCompraService,
-    private cdr: ChangeDetectorRef
+      private apiService: ViagemCompraService,
+      private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -104,21 +105,17 @@ export class AreaPassageiroComponent implements OnInit {
   carregarDadosPerfilDoBanco() {
     if (!this.userId) this.tentarCarregarUsuarioSessao();
     if (!this.userId) return;
+
     this.apiService.obterPassageiroPorId(this.userId).subscribe({
       next: (dados: any) => {
-        this.dadosPerfilPassageiro = dados;
+        if (dados) {
+          this.dadosPerfilPassageiro = dados;
+        }
         this.mensagemErro = '';
       },
       error: (err: any) => {
-        console.error('Erro ao buscar dados do passageiro:', err);
-
-        if (err.status === 404) {
-          this.mensagemErro =
-            'Você precisa completar o seu cadastro de passageiro antes de agendar uma viagem!';
-        } else {
-          this.mensagemErro = 'Usuário não identificado de forma válida. Faça login novamente.';
-        }
-      },
+        console.warn('Perfil detalhado não localizado no banco (404/403). Usando dados da sessão de login.', err);
+      }
     });
   }
 
@@ -143,20 +140,50 @@ export class AreaPassageiroComponent implements OnInit {
     this.limparMensagens();
 
     this.apiService
-      .pesquisarViagens(this.busca.origem, this.busca.destino, dataFormatada)
-      .subscribe({
-        next: (viagens: ViagemResponse[]) => {
-          this.viagensDisponiveis = viagens;
-          this.pesquisaFeita = true;
-          if (viagens.length === 0) {
-            this.mensagemErro = 'Nenhuma viagem encontrada para este destino na data selecionada.';
-          }
-        },
-        error: () => (this.mensagemErro = 'Erro ao pesquisar viagens no sistema.'),
-      });
+        .pesquisarViagens(this.busca.origem, this.busca.destino, dataFormatada)
+        .subscribe({
+          next: (viagens: any[]) => {
+            this.viagensDisponiveis = viagens || [];
+            this.pesquisaFeita = true;
+            if (viagens.length === 0) {
+              this.mensagemErro = 'Nenhuma viagem encontrada para este destino na data selecionada.';
+            }
+          },
+          error: () => (this.mensagemErro = 'Erro ao pesquisar viagens no sistema.'),
+        });
   }
 
-  // Gera dinamicamente novos blocos de passageiros no formulário baseado no input numérico
+  comprarDisponivel(viagemId: number) {
+    this.viagemSelecionadaId = viagemId;
+    this.limparMensagens();
+
+    if (!this.userId) {
+      this.tentarCarregarUsuarioSessao();
+    }
+
+    this.apiService.obterPassageiroPorId(this.userId).subscribe({
+      next: (dados: any) => {
+        if (dados) {
+          this.dadosPerfilPassageiro = dados;
+          this.listaPassageirosForm = [{
+            nome: dados.nome || '',
+            cpf: dados.cpf || '',
+            numeroAssentos: 1
+          }];
+        }
+        this.subTelaCompra = 'formulario';
+        this.mudarSubAba('checkout');
+      },
+      error: (err: any) => {
+        console.warn('Tratando erro de perfil ausente (404/403). Abrindo formulário de checkout em branco.', err);
+
+        this.listaPassageirosForm = [{ nome: '', cpf: '', numeroAssentos: 1 }];
+        this.subTelaCompra = 'formulario';
+        this.mudarSubAba('checkout');
+      }
+    });
+  }
+
   atualizarQuantidadePassageiros() {
     const qtd = Math.max(1, Number(this.quantidadeSelecionada));
     this.quantidadeSelecionada = qtd;
@@ -169,7 +196,6 @@ export class AreaPassageiroComponent implements OnInit {
     }
   }
 
-  // Acionado ao clicar no botão "Confirmar e Pagar" do formulário
   validarEAvancarFluxoCompra(dadosForm: any, form: NgForm) {
     if (form.invalid) return;
     this.limparMensagens();
@@ -177,11 +203,10 @@ export class AreaPassageiroComponent implements OnInit {
     if (!this.userId) this.tentarCarregarUsuarioSessao();
     if (!this.validarUsuario()) return;
 
-    const idUsuarioEfetivo = this.userId;
     const totalPassagens = Number(this.quantidadeSelecionada);
 
     const compraRequestPayload: CompraRequestPayload = {
-      usuarioId: Number(idUsuarioEfetivo),
+      usuarioId: Number(this.userId),
       viagemId: Number(this.viagemSelecionadaId),
       passageiro: this.listaPassageirosForm.map(p => ({
         nome: p.nome,
@@ -208,20 +233,42 @@ export class AreaPassageiroComponent implements OnInit {
         }
       },
       error: (err: any) => {
-        console.error('Erro ao processar o POST inicial de compra:', err);
+        console.error('Erro ao processar a compra:', err);
         this.mensagemErro = err.error?.message || 'Não foi possível registrar a intenção de compra.';
       }
     });
   }
 
-  private efetivarConfirmacaoPagamentoNoBackend(form: NgForm) {
-    this.mensagemSucesso = 'Compra realizada e processada com sucesso!';
-    this.subTelaCompra = 'sucesso';
-    this.listarTodasAsViagens();
-    this.carregarHistorico();
-    form.resetForm();
-    this.quantidadeSelecionada = 1;
-    this.listaPassageirosForm = [{ nome: '', cpf: '', numeroAssentos: 1 }];
+  dispararCompraParaServidor(formCompra: NgForm) {
+    this.efetivarConfirmacaoPagamentoNoBackend(formCompra);
+  }
+
+  private efetivarConfirmacaoPagamentoNoBackend(form: NgForm | null) {
+    if (!this.idCompraPendente) {
+      this.mensagemErro = 'Erro: Nenhuma referência de compra pendente foi localizada.';
+      return;
+    }
+
+    this.apiService.confirmarPagamento(this.idCompraPendente).subscribe({
+      next: () => {
+        this.mensagemSucesso = 'Compra realizada com sucesso! O bilhete em formato PDF foi enviado para o seu e-mail.';
+        if (form) form.resetForm();
+
+        this.subTelaCompra = 'sucesso';
+        this.listarTodasAsViagens();
+        this.carregarHistorico();
+
+        this.quantidadeSelecionada = 1;
+        this.listaPassageirosForm = [{ nome: '', cpf: '', numeroAssentos: 1 }];
+        this.idCompraPendente = null;
+
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Erro ao efetuar o PUT de confirmação:', err);
+        this.mensagemErro = err.error?.message || 'Falha na aprovação do pagamento.';
+      }
+    });
   }
 
   carregarHistorico() {
@@ -229,7 +276,7 @@ export class AreaPassageiroComponent implements OnInit {
     if (!this.userId || this.userId === 0) return;
 
     this.apiService.obterHistorico(this.userId).subscribe({
-      next: (passagens: PassagemResponse[]) => (this.minhasPassagens = passagens),
+      next: (passagens: any[]) => (this.minhasPassagens = passagens || []),
       error: () => (this.mensagemErro = 'Erro ao carregar o seu histórico de passagens.'),
     });
   }
@@ -240,7 +287,7 @@ export class AreaPassageiroComponent implements OnInit {
 
     this.apiService.atualizarPassageiro(this.userId, this.dadosPerfilPassageiro).subscribe({
       next: () => {
-        this.mensagemSucesso = 'Seus dados foram updated com sucesso!';
+        this.mensagemSucesso = 'Seus dados foram atualizados com sucesso!';
         this.carregarDadosPerfilDoBanco();
       },
       error: () => (this.mensagemErro = 'Erro ao salvar modificações do perfil.'),
@@ -264,7 +311,7 @@ export class AreaPassageiroComponent implements OnInit {
 
   listarTodasAsViagens() {
     this.apiService.listarTodasAsViagens().subscribe({
-      next: (dados: ViagemResponse[]) => {
+      next: (dados: any[]) => {
         this.listaViagensGerais = dados || [];
       },
       error: () => (this.mensagemErro = 'Falha ao carregar o mural de viagens disponíveis.'),
