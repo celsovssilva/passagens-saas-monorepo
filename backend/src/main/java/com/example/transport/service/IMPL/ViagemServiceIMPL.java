@@ -98,6 +98,7 @@ public class ViagemServiceIMPL implements ViagemService {
 
         return v.getPassageiro().stream()
                 .map(p -> new PassageiroResponse(
+                        p.getId(),
                         p.getNome(),
                         p.getUser().getEmail(),
                         p.getPhone(),

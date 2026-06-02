@@ -26,6 +26,7 @@ public class TokenServiceIMPL  implements TokenService {
                     .withIssuer("api-transport")
                     .withSubject(user.getEmail())
                     .withClaim("role", user.getRole().name())
+                    .withClaim("id", user.getId())
                     .withExpiresAt(dataExpiracao());
             if ("EMPRESA".equals(user.getRole().name())
                     && user.getEmpresas() != null

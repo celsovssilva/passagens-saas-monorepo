@@ -15,12 +15,12 @@ export interface ViagemResponse {
 }
 
 export interface PassageiroResponse {
+  id: number;
   nome: string;
   phone: string;
   email: string;
   idade: number;
 }
-
 export interface PassagemResponse {
   nomePassageiro: string;
   email: string;
@@ -62,11 +62,6 @@ export class ViagemCompraService {
 
   obterHistorico(userId: number): Observable<PassagemResponse[]> {
     return this.http.get<PassagemResponse[]>(`${this.baseUrl}/compra/historico/${userId}`, this.obterHeaders());
-  }
-
-  // 🔴 ATENÇÃO: Mudou para o endpoint dinâmico que criamos no Spring Boot!
-  buscarPerfilLogado(): Observable<PassageiroResponse> {
-    return this.http.get<PassageiroResponse>(`${this.baseUrl}/passageiro/meu-perfil`, this.obterHeaders());
   }
 
   atualizarPassageiro(idPassageiro: number, dados: any): Observable<PassageiroResponse> {
