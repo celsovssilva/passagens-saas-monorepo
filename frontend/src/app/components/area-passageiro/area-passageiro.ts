@@ -1,12 +1,12 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import {
   ViagemCompraService,
   ViagemResponse,
   PassagemResponse,
+  CompraRequestPayload
 } from '../../service/viagem-compra.service';
-import { jwtDecode } from 'jwt-decode';
 
 @Component({
   selector: 'app-area-passageiro',
@@ -19,14 +19,25 @@ export class AreaPassageiroComponent implements OnInit {
   @Input() emailUsuario: string = '';
 
   userId!: number;
-  subAbaAtiva: string = 'buscar';
+  subAbaAtiva: string = 'buscar'; // 'buscar' | 'historico' | 'checkout' | 'rotas' | 'empresas'
+
+  // Gerenciamento do Checkout de Compra
+  subTelaCompra: 'formulario' | 'pix' | 'sucesso' = 'formulario';
+  viagemSelecionadaId!: number;
+  idCompraPendente: number | null = null;
+  backupHistoricoCompra: CompraRequestPayload | null = null;
+  quantidadeSelecionada: number = 1;
+
+  // Lista dinâmica de passageiros vinculados ao formulário de compra
+  listaPassageirosForm: Array<{ nome: string; cpf: string; numeroAssentos: number }> = [
+    { nome: '', cpf: '', numeroAssentos: 1 }
+  ];
 
   busca = { origem: '', destino: '', data: '' };
   viagensDisponiveis: ViagemResponse[] = [];
   pesquisaFeita: boolean = false;
 
   minhasPassagens: PassagemResponse[] = [];
-  qtdAssentosSelecionados: number = 1;
 
   mensagemSucesso: string = '';
   mensagemErro: string = '';
@@ -39,55 +50,76 @@ export class AreaPassageiroComponent implements OnInit {
     email: '',
     cpf: '000.000.000-00',
   };
+
   listaRotasGerais: any[] = [];
   listaViagensGerais: any[] = [];
   listaEmpresasGerais: any[] = [];
 
-  constructor(private apiService: ViagemCompraService) {}
+  constructor(
+    private apiService: ViagemCompraService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
   ngOnInit() {
+    this.tentarCarregarUsuarioSessao();
+
+    // Inicializa listagens globais independentes de ID
+    this.listarTodasAsViagens();
+    this.listarTodasAsEmpresas();
+    this.listarTodasAsRotas();
+  }
+
+  private tentarCarregarUsuarioSessao(): boolean {
     const token = localStorage.getItem('token');
 
     if (token) {
       try {
-        this.mensagemErro = '';
-
-        // Decodifica o payload do JWT nativamente
         const payloadBase64 = token.split('.')[1];
         const payloadDecodificado = atob(payloadBase64);
         const tokenDecodificado = JSON.parse(payloadDecodificado);
 
-        console.log('CONTEÚDO DO TOKEN:', tokenDecodificado);
-
-        // 🌟 Agora captura o ID real que o Java vai enviar na Claim "id"
         if (tokenDecodificado.id) {
           this.userId = Number(tokenDecodificado.id);
           localStorage.setItem('userId', String(this.userId));
-        } else {
-          // Fallback seguro caso o token antigo ainda esteja no cache do navegador
-          const idSalvo = localStorage.getItem('userId');
-          if (idSalvo) {
-            this.userId = Number(idSalvo);
-          } else {
-            this.mensagemErro = 'ID do usuário não encontrado no Token. Por favor, faça login novamente.';
-            return;
-          }
+
+          if (tokenDecodificado.nome) this.dadosPerfilPassageiro.nome = tokenDecodificado.nome;
+          this.dadosPerfilPassageiro.email = tokenDecodificado.sub || '';
+
+          return true;
         }
-
-        if (tokenDecodificado.nome) this.dadosPerfilPassageiro.nome = tokenDecodificado.nome;
-        this.dadosPerfilPassageiro.email = tokenDecodificado.sub || '';
-
-        // Inicializa todas as listagens globais que já funcionam
-        this.listarTodasAsViagens();
-        this.listarTodasAsEmpresas();
-        this.listarTodasAsRotas();
-
       } catch (error) {
-        console.error('Erro ao ler dados do Token:', error);
-        this.mensagemErro = 'Erro de autenticação local. Faça login novamente.';
+        console.error('Erro ao decodificar token:', error);
       }
-    } else {
-      this.mensagemErro = 'Sessão inválida ou token não encontrado. Por favor, faça login novamente.';
     }
+
+    const idSalvo = localStorage.getItem('userId');
+    if (idSalvo) {
+      this.userId = Number(idSalvo);
+      return true;
+    }
+
+    return false;
+  }
+
+  carregarDadosPerfilDoBanco() {
+    if (!this.userId) this.tentarCarregarUsuarioSessao();
+    if (!this.userId) return;
+    this.apiService.obterPassageiroPorId(this.userId).subscribe({
+      next: (dados: any) => {
+        this.dadosPerfilPassageiro = dados;
+        this.mensagemErro = '';
+      },
+      error: (err: any) => {
+        console.error('Erro ao buscar dados do passageiro:', err);
+
+        if (err.status === 404) {
+          this.mensagemErro =
+            'Você precisa completar o seu cadastro de passageiro antes de agendar uma viagem!';
+        } else {
+          this.mensagemErro = 'Usuário não identificado de forma válida. Faça login novamente.';
+        }
+      },
+    });
   }
 
   mudarSubAba(aba: string) {
@@ -124,57 +156,76 @@ export class AreaPassageiroComponent implements OnInit {
       });
   }
 
-  comprar(viagemId: number) {
+  // Gera dinamicamente novos blocos de passageiros no formulário baseado no input numérico
+  atualizarQuantidadePassageiros() {
+    const qtd = Math.max(1, Number(this.quantidadeSelecionada));
+    this.quantidadeSelecionada = qtd;
+
+    while (this.listaPassageirosForm.length < qtd) {
+      this.listaPassageirosForm.push({ nome: '', cpf: '', numeroAssentos: this.listaPassageirosForm.length + 1 });
+    }
+    while (this.listaPassageirosForm.length > qtd) {
+      this.listaPassageirosForm.pop();
+    }
+  }
+
+  // Acionado ao clicar no botão "Confirmar e Pagar" do formulário
+  validarEAvancarFluxoCompra(dadosForm: any, form: NgForm) {
+    if (form.invalid) return;
+    this.limparMensagens();
+
+    if (!this.userId) this.tentarCarregarUsuarioSessao();
     if (!this.validarUsuario()) return;
 
-    const requestViagem = {
-      id: viagemId,
-      userId: this.userId,
-      cpf: this.dadosPerfilPassageiro.cpf || '111.111.111-11',
-      nomePassageiro: this.dadosPerfilPassageiro.nome,
-      capacidade: this.qtdAssentosSelecionados,
+    const idUsuarioEfetivo = this.userId;
+    const totalPassagens = Number(this.quantidadeSelecionada);
+
+    const compraRequestPayload: CompraRequestPayload = {
+      usuarioId: Number(idUsuarioEfetivo),
+      viagemId: Number(this.viagemSelecionadaId),
+      passageiro: this.listaPassageirosForm.map(p => ({
+        nome: p.nome,
+        cpf: p.cpf,
+        numeroAssentos: Number(p.numeroAssentos),
+        quantidadeDeAssentos: totalPassagens
+      })),
+      metodo: dadosForm.metodo,
+      numeroCartao: dadosForm.numeroCartao || null,
+      cvv: dadosForm.cvv || null
     };
 
-    this.apiService.comprarPassagem(requestViagem).subscribe({
-      next: () => {
-        this.mensagemSucesso = 'Passagem agendada e confirmada com sucesso!';
-        this.buscarPassagens();
-        this.carregarHistorico();
+    this.backupHistoricoCompra = compraRequestPayload;
+
+    this.apiService.comprarPassagem(compraRequestPayload).subscribe({
+      next: (compraSalvaNoBanco: any) => {
+        this.idCompraPendente = compraSalvaNoBanco?.id || compraSalvaNoBanco?.idCompra || null;
+
+        if (dadosForm.metodo === 'PIX') {
+          this.subTelaCompra = 'pix';
+          this.cdr.detectChanges();
+        } else {
+          this.efetivarConfirmacaoPagamentoNoBackend(form);
+        }
       },
       error: (err: any) => {
-        console.error(err);
-        this.mensagemErro =
-          err.error?.message || 'Falha ao processar o agendamento da viagem no servidor.';
-      },
+        console.error('Erro ao processar o POST inicial de compra:', err);
+        this.mensagemErro = err.error?.message || 'Não foi possível registrar a intenção de compra.';
+      }
     });
   }
 
-  comprarDisponivel(viagem: any) {
-    if (!this.validarUsuario()) return;
-
-    const requestViagem = {
-      id: viagem.id,
-      userId: this.userId,
-      cpf: this.dadosPerfilPassageiro.cpf || '111.111.111-11',
-      nomePassageiro: this.dadosPerfilPassageiro.nome,
-      capacidade: viagem.quantidadeDesejada || 1,
-    };
-
-    this.apiService.comprarPassagem(requestViagem).subscribe({
-      next: () => {
-        this.mensagemSucesso = 'Passagem comprada com sucesso a partir do mural!';
-        this.listarTodasAsViagens();
-        this.carregarHistorico();
-      },
-      error: (err: any) => {
-        console.error(err);
-        this.mensagemErro =
-          err.error?.message || 'Erro de permissão ou dados inválidos ao agendar.';
-      },
-    });
+  private efetivarConfirmacaoPagamentoNoBackend(form: NgForm) {
+    this.mensagemSucesso = 'Compra realizada e processada com sucesso!';
+    this.subTelaCompra = 'sucesso';
+    this.listarTodasAsViagens();
+    this.carregarHistorico();
+    form.resetForm();
+    this.quantidadeSelecionada = 1;
+    this.listaPassageirosForm = [{ nome: '', cpf: '', numeroAssentos: 1 }];
   }
 
   carregarHistorico() {
+    if (!this.userId) this.tentarCarregarUsuarioSessao();
     if (!this.userId || this.userId === 0) return;
 
     this.apiService.obterHistorico(this.userId).subscribe({
@@ -188,8 +239,9 @@ export class AreaPassageiroComponent implements OnInit {
     this.limparMensagens();
 
     this.apiService.atualizarPassageiro(this.userId, this.dadosPerfilPassageiro).subscribe({
-      next: (response) => {
-        this.mensagemSucesso = 'Seus dados foram atualizados com sucesso!';
+      next: () => {
+        this.mensagemSucesso = 'Seus dados foram updated com sucesso!';
+        this.carregarDadosPerfilDoBanco();
       },
       error: () => (this.mensagemErro = 'Erro ao salvar modificações do perfil.'),
     });
@@ -213,10 +265,7 @@ export class AreaPassageiroComponent implements OnInit {
   listarTodasAsViagens() {
     this.apiService.listarTodasAsViagens().subscribe({
       next: (dados: ViagemResponse[]) => {
-        this.listaViagensGerais = (dados || []).map((viagem) => ({
-          ...viagem,
-          quantidadeDesejada: 1,
-        }));
+        this.listaViagensGerais = dados || [];
       },
       error: () => (this.mensagemErro = 'Falha ao carregar o mural de viagens disponíveis.'),
     });

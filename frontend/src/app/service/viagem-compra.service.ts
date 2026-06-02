@@ -21,6 +21,7 @@ export interface PassageiroResponse {
   email: string;
   idade: number;
 }
+
 export interface PassagemResponse {
   nomePassageiro: string;
   email: string;
@@ -30,6 +31,22 @@ export interface PassagemResponse {
   quantidadeDeAssentos: number;
   dataHoraDaCompra: string;
   numeroAssentos: number;
+}
+
+export interface PassageiroItemPayload {
+  nome: string;
+  cpf: string;
+  numeroAssentos: number;
+  quantidadeDeAssentos: number;
+}
+
+export interface CompraRequestPayload {
+  usuarioId: number;
+  viagemId: number;
+  passageiro: PassageiroItemPayload[];
+  metodo: string;
+  numeroCartao?: string | null;
+  cvv?: string | null;
 }
 
 @Injectable({
@@ -56,12 +73,24 @@ export class ViagemCompraService {
     );
   }
 
-  comprarPassagem(request: { id: number; userId: number; cpf: string; nomePassageiro: string; capacidade: number }): Observable<ViagemResponse> {
-    return this.http.post<ViagemResponse>(`${this.baseUrl}/viagem/agendar`, request, this.obterHeaders());
+  obterPassageiroPorId(idPassageiro: number): Observable<any> {
+    return this.http.get<any>(
+      `${this.baseUrl}/passageiro/buscar/${idPassageiro}`,
+      this.obterHeaders()
+    );
   }
 
-  obterHistorico(userId: number): Observable<PassagemResponse[]> {
-    return this.http.get<PassagemResponse[]>(`${this.baseUrl}/compra/historico/${userId}`, this.obterHeaders());
+  // ATUALIZADO: Aponta agora para a infraestrutura real de transações do seu CompraService
+  comprarPassagem(compraRequestPayload: CompraRequestPayload): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/compra/comprar`,
+      compraRequestPayload,
+      this.obterHeaders()
+    );
+  }
+
+  obterHistorico(userId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/compra/historico/${userId}`, this.obterHeaders());
   }
 
   atualizarPassageiro(idPassageiro: number, dados: any): Observable<PassageiroResponse> {
