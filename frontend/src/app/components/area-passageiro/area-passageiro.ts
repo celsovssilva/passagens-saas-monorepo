@@ -8,7 +8,7 @@ import { ViagemCompraService, ViagemResponse, PassagemResponse, PassageiroRespon
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './area-passageiro.html',
-  styleUrl: './area-passageiro.css'
+  styleUrls: ['./area-passageiro.css']
 })
 export class AreaPassageiroComponent implements OnInit {
   @Input() emailUsuario: string = '';
@@ -26,18 +26,21 @@ export class AreaPassageiroComponent implements OnInit {
   mensagemSucesso: string = '';
   mensagemErro: string = '';
 
-  // Objetos estruturados com base nas respostas reais do seu backend
   dadosPerfilPassageiro: any = { nome: '', sobrenome: '', phone: '', idade: 0, email: '' };
   listaRotasGerais: any[] = [];
+  listaViagensGerais: any[] = [];
   listaEmpresasGerais: any[] = [];
 
   constructor(private apiService: ViagemCompraService) {}
 
   ngOnInit() {
-    const idSalvo = localStorage.getItem('userId');
-    if (idSalvo) {
-      this.userId = Number(idSalvo);
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      this.mensagemErro = '';
       this.obterPerfilPassageiro();
+    } else {
+      this.mensagemErro = 'Sessão inválida ou expirada. Por favor, refaça o login.';
     }
   }
 
@@ -48,17 +51,21 @@ export class AreaPassageiroComponent implements OnInit {
 
     if (aba === 'historico') {
       this.carregarHistorico();
+    } else if (aba === 'rotas') {
+      this.listarTodasAsViagens();
+    } else if (aba === 'empresas') {
+      this.listarTodasAsEmpresas();
     }
   }
 
   buscarPassagens() {
     if (!this.busca.origem || !this.busca.destino || !this.busca.data) return;
 
-    // Converte a data simples do input para o formato esperado pelo LocalDateTime do Java
     const dataFormatada = `${this.busca.data}T00:00:00`;
 
     this.apiService.pesquisarViagens(this.busca.origem, this.busca.destino, dataFormatada).subscribe({
       next: (viagens: ViagemResponse[]) => {
+        // Corrigido de 'viajes' para 'viagens'
         this.viagensDisponiveis = viagens;
         this.pesquisaFeita = true;
       },
@@ -67,18 +74,17 @@ export class AreaPassageiroComponent implements OnInit {
   }
 
   comprar(viagemId: number) {
-    if (!this.userId) {
-      this.mensagemErro = 'Usuário não identificado. Faça login novamente.';
+    if (!this.userId || this.userId === 0) {
+      this.mensagemErro = 'Usuário não identificado de forma válida. Faça login novamente.';
       return;
     }
 
-    // Montando o objeto exatamente como o ViagemRequest do seu agendarViagem() espera receber
     const requestViagem = {
       id: viagemId,
       userId: this.userId,
       cpf: this.dadosPerfilPassageiro.cpf || '000.000.000-00',
       nomePassageiro: this.dadosPerfilPassageiro.nome,
-      capacidade: this.qtdAssentosSelecionados // Capacidade solicitada na reserva
+      capacidade: this.qtdAssentosSelecionados
     };
 
     this.apiService.comprarPassagem(requestViagem).subscribe({
@@ -90,7 +96,32 @@ export class AreaPassageiroComponent implements OnInit {
     });
   }
 
+  comprarDisponivel(viagem: any) {
+    if (!this.userId || this.userId === 0) {
+      this.mensagemErro = 'Usuário não identificado de forma válida. Faça login novamente.';
+      return;
+    }
+
+    const requestViagem = {
+      id: viagem.id,
+      userId: this.userId,
+      cpf: this.dadosPerfilPassageiro.cpf || '000.000.000-00',
+      nomePassageiro: this.dadosPerfilPassageiro.nome,
+      capacidade: viagem.quantidadeDesejada || 1
+    };
+
+    this.apiService.comprarPassagem(requestViagem).subscribe({
+      next: () => {
+        this.mensagemSucesso = 'Passagem agendada e confirmada com sucesso!';
+        this.listarTodasAsViagens();
+      },
+      error: (err: any) => this.mensagemErro = err.error?.message || 'Não foi possível realizar o agendamento da viagem.'
+    });
+  }
+
   carregarHistorico() {
+    if (!this.userId || this.userId === 0) return;
+
     this.apiService.obterHistorico(this.userId).subscribe({
       next: (passagens: PassagemResponse[]) => this.minhasPassagens = passagens,
       error: () => this.mensagemErro = 'Erro ao carregar seu histórico de passagens.'
@@ -98,9 +129,27 @@ export class AreaPassageiroComponent implements OnInit {
   }
 
   obterPerfilPassageiro() {
-    this.apiService.buscarPassageiroPorId(this.userId).subscribe({
-      next: (dados: PassageiroResponse) => this.dadosPerfilPassageiro = dados,
-      error: () => console.error('Erro ao buscar dados do perfil do passageiro.')
+    const idSalvo = localStorage.getItem('userId');
+    if (idSalvo && idSalvo !== 'undefined' && idSalvo !== 'null' && idSalvo.trim() !== '') {
+      this.userId = Number(idSalvo);
+    }
+
+    this.apiService.buscarPerfilLogado().subscribe({
+      next: (dados: PassageiroResponse) => {
+        this.dadosPerfilPassageiro = dados;
+        this.mensagemErro = '';
+
+        this.listarTodasAsViagens();
+        this.listarTodasAsEmpresas();
+      },
+      error: (err) => {
+        console.error('Falha no endpoint /meu-perfil:', err);
+        if (err.status === 403) {
+          this.mensagemErro = 'Acesso negado (403): Verifique as permissões do seu usuário no backend ou refaça o login.';
+        } else {
+          this.mensagemErro = 'Erro ao buscar dados do perfil do passageiro no servidor.';
+        }
+      }
     });
   }
 
@@ -127,16 +176,30 @@ export class AreaPassageiroComponent implements OnInit {
     }
   }
 
-  listarTodasAsRotas() {
-    this.apiService.obterRotasGerais().subscribe({
-      next: (dados: any[]) => this.listaRotasGerais = dados,
-      error: () => console.error('Erro ao carregar malha de rotas.')
+  listarTodasAsViagens() {
+    if (typeof this.apiService.listarTodasAsViagens !== 'function') {
+      console.warn('O método listarTodasAsViagens não existe no ViagemCompraService.');
+      return;
+    }
+
+    this.apiService.listarTodasAsViagens().subscribe({
+      next: (dados: ViagemResponse[]) => {
+        this.listaViagensGerais = (dados || []).map(viagem => ({
+          ...viagem,
+          quantidadeDesejada: 1
+        }));
+      },
+      error: () => {
+        this.mensagemErro = 'Erro ao carregar o mural de viagens do servidor.';
+      }
     });
   }
 
   listarTodasAsEmpresas() {
+    if (typeof this.apiService.obterTodasEmpresas !== 'function') return;
+
     this.apiService.obterTodasEmpresas().subscribe({
-      next: (dados: any[]) => this.listaEmpresasGerais = dados,
+      next: (dados: any[]) => this.listaEmpresasGerais = dados || [],
       error: () => console.error('Erro ao listar as empresas operacionais.')
     });
   }

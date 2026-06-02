@@ -12,7 +12,6 @@ import { AuthService } from '../../service/auth.service';
   styleUrls: ['./login.css']
 })
 export class LoginComponent {
-  // Objeto vinculado aos inputs do formulário HTML
   credenciais = {
     login: '',
     senha: ''
@@ -30,33 +29,32 @@ export class LoginComponent {
     };
 
     this.authService.login(dadosLogin).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         console.log('Login efetuado com sucesso!', response);
 
-        // Trata o token caso venha encapsulado em um objeto ou como string pura
         const token = response && typeof response === 'object' ? (response.token || response.tokenAcesso) : response;
-
-        // Garante a leitura do token ativo (seja retornado na response ou já salvo pelo AuthService)
         const tokenAtivo = token || localStorage.getItem('token');
 
         if (tokenAtivo) {
           try {
-            // Salva o token para garantir persistência nas requisições HTTP do Dashboard
             localStorage.setItem('token', tokenAtivo);
 
-            // Decodifica a seção do Payload do JWT (segunda parte do token)
             const parts = tokenAtivo.split('.');
             const base64Url = parts[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const payload = JSON.parse(window.atob(base64));
 
-            // Lê a claim de nível de acesso (role/authority) e sanitiza o texto (.trim())
+            // Salva o ID correto do usuário para a Área do Passageiro não quebrar
+            const idUsuario = response.userId || response.id || response.user?.id || payload.sub;
+            if (idUsuario) {
+              localStorage.setItem('userId', idUsuario.toString());
+            }
+
             let roleUsuario = payload.role || payload.authority || '';
             roleUsuario = roleUsuario.toString().trim().toUpperCase();
 
             console.log('Nível de acesso identificado e tratado:', roleUsuario);
 
-            // Salva os dados de escopo no localStorage para validação das telas internas
             localStorage.setItem('role', roleUsuario);
             localStorage.setItem('email', payload.sub || '');
 
@@ -64,7 +62,6 @@ export class LoginComponent {
               localStorage.setItem('empresaId', payload.empresaId.toString());
             }
 
-            // REDIRECIONAMENTO BASEADO NA ROLE SANITIZADA
             if (roleUsuario.includes('EMPRESA')) {
               this.router.navigate(['/dashboard-empresa']);
             } else if (roleUsuario.includes('ADMIN')) {
@@ -72,13 +69,12 @@ export class LoginComponent {
             } else {
               this.router.navigate(['/area-passageiro']);
             }
-            return; // Interrompe a execução para não cair no fallback abaixo
+            return;
           } catch (e) {
             console.error('Erro ao decodificar payload do token JWT:', e);
           }
         }
 
-        // Fallback de segurança caso o formato do token mude inesperadamente
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {

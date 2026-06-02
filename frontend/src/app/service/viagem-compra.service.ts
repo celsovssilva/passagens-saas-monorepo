@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-// Espelha exatamente o Record ViagemResponse do Java
 export interface ViagemResponse {
   id: number;
   origem: string;
@@ -10,12 +9,11 @@ export interface ViagemResponse {
   ufOrigem: string;
   ufDestino: string;
   transporteModelo: string;
-  dataSaida: string; // LocalDateTime vira string no JSON
+  dataSaida: string;
   valor: number;
   vagasDisponiveis: number;
 }
 
-// Espelha exatamente o Record PassageiroResponse do Java
 export interface PassageiroResponse {
   nome: string;
   phone: string;
@@ -23,11 +21,10 @@ export interface PassageiroResponse {
   idade: number;
 }
 
-// Espelha exatamente o Record PassagemResponse do Java
 export interface PassagemResponse {
   nomePassageiro: string;
   email: string;
-  documento: string; // Mapeado do CPF no backend
+  documento: string;
   origem: string;
   destino: string;
   quantidadeDeAssentos: number;
@@ -43,43 +40,52 @@ export class ViagemCompraService {
 
   constructor(private http: HttpClient) {}
 
-  // Vinculado a: GET api/viagem/pesquisar
+  private obterHeaders(): { headers: HttpHeaders } {
+    const token = localStorage.getItem('token');
+    return {
+      headers: new HttpHeaders({
+        'Authorization': token ? `Bearer ${token}` : ''
+      })
+    };
+  }
+
   pesquisarViagens(origem: string, destino: string, data: string): Observable<ViagemResponse[]> {
-    return this.http.get<ViagemResponse[]>(`${this.baseUrl}/viagem/pesquisar?origem=${origem}&destino=${destino}&data=${data}`);
+    return this.http.get<ViagemResponse[]>(
+      `${this.baseUrl}/viagem/pesquisar?origem=${origem}&destino=${destino}&data=${data}`,
+      this.obterHeaders()
+    );
   }
 
-  // Vinculado a: POST api/viagem/agendar
   comprarPassagem(request: { id: number; userId: number; cpf: string; nomePassageiro: string; capacidade: number }): Observable<ViagemResponse> {
-    return this.http.post<ViagemResponse>(`${this.baseUrl}/viagem/agendar`, request);
+    return this.http.post<ViagemResponse>(`${this.baseUrl}/viagem/agendar`, request, this.obterHeaders());
   }
 
-  // Vinculado a: GET api/compra/historico/{userId} -> Mapeado para retornar a lista de passagens do usuário
   obterHistorico(userId: number): Observable<PassagemResponse[]> {
-    return this.http.get<PassagemResponse[]>(`${this.baseUrl}/compra/historico/${userId}`);
+    return this.http.get<PassagemResponse[]>(`${this.baseUrl}/compra/historico/${userId}`, this.obterHeaders());
   }
 
-  // Vinculado a: GET api/passageiro/buscar/{idPassaeiro}
-  buscarPassageiroPorId(idPassagerio: number): Observable<PassageiroResponse> {
-    return this.http.get<PassageiroResponse>(`${this.baseUrl}/passageiro/buscar/${idPassagerio}`);
+  // 🔴 ATENÇÃO: Mudou para o endpoint dinâmico que criamos no Spring Boot!
+  buscarPerfilLogado(): Observable<PassageiroResponse> {
+    return this.http.get<PassageiroResponse>(`${this.baseUrl}/passageiro/meu-perfil`, this.obterHeaders());
   }
 
-  // Vinculado a: PUT api/passageiro/atualizar/{idPassageiro}
-  atualizarPassageiro(idPassagerio: number, dados: any): Observable<PassageiroResponse> {
-    return this.http.put<PassageiroResponse>(`${this.baseUrl}/passageiro/atualizar/${idPassagerio}`, dados);
+  atualizarPassageiro(idPassageiro: number, dados: any): Observable<PassageiroResponse> {
+    return this.http.put<PassageiroResponse>(`${this.baseUrl}/passageiro/atualizar/${idPassageiro}`, dados, this.obterHeaders());
   }
 
-  // Vinculado a: DELETE api/passageiro/deletar/{idPassageiro}
-  deletarPassageiro(idPassagerio: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/passageiro/deletar/${idPassagerio}`);
+  deletarPassageiro(idPassageiro: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/passageiro/deletar/${idPassageiro}`, this.obterHeaders());
   }
 
-  // Vinculado a: GET api/empresa/listar-todas
   obterTodasEmpresas(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/empresa/listar-todas`);
+    return this.http.get<any[]>(`${this.baseUrl}/empresa/listar-todas`, this.obterHeaders());
   }
 
-  // Vinculado a: GET api/rotas
   obterRotasGerais(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/rotas`);
+    return this.http.get<any[]>(`${this.baseUrl}/rotas`, this.obterHeaders());
+  }
+
+  listarTodasAsViagens(): Observable<ViagemResponse[]> {
+    return this.http.get<ViagemResponse[]>(`${this.baseUrl}/viagem/listar-todas`, this.obterHeaders());
   }
 }
