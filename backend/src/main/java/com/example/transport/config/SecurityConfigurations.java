@@ -34,7 +34,7 @@ public class SecurityConfigurations {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req ->{
-                  
+                    req.requestMatchers("/error").permitAll();
                     req.requestMatchers(HttpMethod.POST,"api/auth/login").permitAll();
                     req.requestMatchers(HttpMethod.POST,"api/empresa/cadastrar").permitAll();
                     req.requestMatchers(HttpMethod.POST,"api/passageiro/cadastrar").permitAll();
@@ -79,7 +79,7 @@ public class SecurityConfigurations {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Permite seu Front-end
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
 

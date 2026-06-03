@@ -73,7 +73,6 @@
         </div>
       </div>
     </div>
-
     <div *ngIf="subAbaAtiva === 'historico'">
       <h4 class="mb-3">Seu Histórico de Viagens</h4>
       <div *ngIf="minhasPassagens.length === 0" class="alert alert-info">
@@ -85,9 +84,10 @@
           <tr>
             <th style="width: 12%">ID Compra</th>
             <th style="width: 25%">Passageiro</th>
-            <th style="width: 35%">Origem / Destino</th>
-            <th style="width: 18%">Data da Compra</th>
+            <th style="width: 30%">Origem / Destino</th>
+            <th style="width: 15%">Data da Compra</th>
             <th style="width: 10%">Status</th>
+            <th style="width: 8%">Ações</th>
           </tr>
           </thead>
           <tbody>
@@ -96,21 +96,37 @@
 
             <td>
               <i class="bi bi-person-fill text-secondary me-1"></i>
-              {{ passagem?.nomePassageiro || passagem?.passageiros?.[0]?.nome || passagem?.passageiro?.[0]?.nome || 'CELSO SILVA' }}
+              {{ passagem?.nomePassageiro || passagem?.passageiros?.[0]?.nome || passagem?.passenger?.[0]?.nome || 'CELSO SILVA' }}
             </td>
 
             <td>
-              <span class="fw-semibold text-primary">{{ passagem?.origem || passagem?.viagem?.rota?.origem || passagem?.rota?.origem || 'Maceió' }}</span>
+              <span class="fw-semibold text-primary">{{ passagem?.origem || passagem?.viagem?.rota?.origem || 'Maceió' }}</span>
               <i class="bi bi-arrow-right text-muted mx-2"></i>
-              <span class="fw-semibold text-success">{{ passagem?.destino || passagem?.viagem?.rota?.destino || passagem?.rota?.destino || 'Olho d\'Água' }}</span>
+              <span class="fw-semibold text-success">{{ passagem?.destino || passagem?.viagem?.rota?.destino || 'Olho d\'Água' }}</span>
             </td>
 
             <td>{{ (passagem?.dataCompra || passagem?.dataHoraDaCompra) | date:'dd/MM/yyyy HH:mm' }}</td>
 
             <td>
               <span class="badge px-3 py-2 d-block text-center"
-                    [ngClass]="passagem?.status === 'APROVADO' ? 'bg-success' : 'bg-warning text-dark'">
+                    [ngClass]="{
+                      'bg-success': passagem?.status === 'APROVADO',
+                      'bg-warning text-dark': passagem?.status === 'PENDENTE',
+                      'bg-danger': passagem?.status === 'CANCELADO'
+                    }">
                 {{ passagem?.status || 'PENDENTE' }}
+              </span>
+            </td>
+
+            <td>
+              <button class="btn btn-outline-danger btn-sm w-100"
+                      *ngIf="passagem?.status !== 'CANCELADO'"
+                      (click)="cancelarMinhaCompra(passagem.id)"
+                      title="Cancelar Viagem">
+                <i class="bi bi-trash3-fill"></i> Cancelar
+              </button>
+              <span class="text-muted small d-block text-center fw-light" *ngIf="passagem?.status === 'CANCELADO'">
+                <i class="bi bi-x-circle text-danger"></i> Inativa
               </span>
             </td>
           </tr>

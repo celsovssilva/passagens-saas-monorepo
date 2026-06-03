@@ -132,17 +132,22 @@ public class CompraServiceIMPL implements CompraService {
         dispararMensagem(compraSalva, v, usuarioReal);
     }
     @Override
+    @Transactional
     public void cancelarCompra(Long compraId) {
         Compra compra = compraRepository.findById(compraId)
-                .orElseThrow(()-> new RuntimeException("Essa compra não existe"));
-        if(StatusPagamento.CANCELADO.equals(compra.getStatus())){
-            new RuntimeException("Compra já cancelada");
+                .orElseThrow(() -> new RuntimeException("Essa compra não existe"));
 
+        if (StatusPagamento.CANCELADO.equals(compra.getStatus())) {
+            throw new RuntimeException("Compra já cancelada");
         }
-        if(compra.getPassagens().isEmpty()){
-            new RuntimeException("Erro: Compra sem passagens vinculadas.");
+        if (compra.getPassagens() == null || compra.getPassagens().isEmpty()) {
+            throw new RuntimeException("Erro: Nenhuma passagem vinculada a esta compra no banco.");
         }
         Viagem v = compra.getPassagens().get(0).getViagem();
+        if (v == null) {
+            throw new RuntimeException("Erro: Viagem não encontrada para esta passagem.");
+        }
+
         int vagasParaDevolver = compra.getPassagens().size();
         v.devolverVagas(vagasParaDevolver);
         compra.setStatus(StatusPagamento.CANCELADO);

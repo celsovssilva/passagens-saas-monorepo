@@ -119,4 +119,11 @@ export class ViagemCompraService {
   listarTodasAsViagens(): Observable<ViagemResponse[]> {
     return this.http.get<ViagemResponse[]>(`${this.baseUrl}/viagem/listar-todas`, this.obterHeaders());
   }
+  cancelarCompra(compraId: number): Observable<any> {
+    return this.http.patch<any>(
+      `http://localhost:8080/api/compra/${compraId}/cancelar`,
+      {},
+      this.obterHeaders(),
+    );
+  }
 }
