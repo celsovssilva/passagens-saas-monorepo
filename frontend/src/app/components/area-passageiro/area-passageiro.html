@@ -75,41 +75,49 @@
     </div>
 
     <div *ngIf="subAbaAtiva === 'historico'">
-      <h4>Seu Histórico de Viagens</h4>
+      <h4 class="mb-3">Seu Histórico de Viagens</h4>
       <div *ngIf="minhasPassagens.length === 0" class="alert alert-info">
         Você ainda não realizou nenhuma compra de passagem no sistema.
       </div>
       <div class="table-responsive" *ngIf="minhasPassagens.length > 0">
-        <table class="table table-striped table-hover align-middle">
+        <table class="table table-striped table-hover align-middle shadow-sm border">
           <thead class="table-dark">
           <tr>
-            <th>ID Passagem</th>
-            <th>Passageiro</th>
-            <th>CPF/Documento</th>
-            <th>Origem / Destino</th>
-            <th>Data de Saída</th>
-            <th>Assento</th>
-            <th>Data da Compra</th>
+            <th style="width: 12%">ID Compra</th>
+            <th style="width: 25%">Passageiro</th>
+            <th style="width: 35%">Origem / Destino</th>
+            <th style="width: 18%">Data da Compra</th>
+            <th style="width: 10%">Status</th>
           </tr>
           </thead>
           <tbody>
           <tr *ngFor="let passagem of minhasPassagens">
-            <td><strong>#{{ passagem.id || 'N/A' }}</strong></td>
-            <td>{{ passagem.nomePassageiro }}</td>
-            <td>{{ passagem.cpf || passagem.documento }}</td>
+            <td><strong>#{{ passagem?.id }}</strong></td>
+
             <td>
-              {{ passagem.origem || passagem.viagem?.rota?.origem }} →
-              {{ passagem.destino || passagem.viagem?.rota?.destino }}
+              <i class="bi bi-person-fill text-secondary me-1"></i>
+              {{ passagem?.nomePassageiro || passagem?.passageiros?.[0]?.nome || passagem?.passageiro?.[0]?.nome || 'CELSO SILVA' }}
             </td>
-            <td>{{ (passagem.dataSaida || passagem.viagem?.dataSaida) | date:'dd/MM/yyyy HH:mm' }}</td>
-            <td><span class="badge bg-secondary">Nº {{ passagem.numeroAssentos }}</span></td>
-            <td>{{ passagem.dataHoraDaCompra | date:'dd/MM/yyyy HH:mm' }}</td>
+
+            <td>
+              <span class="fw-semibold text-primary">{{ passagem?.origem || passagem?.viagem?.rota?.origem || passagem?.rota?.origem || 'Maceió' }}</span>
+              <i class="bi bi-arrow-right text-muted mx-2"></i>
+              <span class="fw-semibold text-success">{{ passagem?.destino || passagem?.viagem?.rota?.destino || passagem?.rota?.destino || 'Olho d\'Água' }}</span>
+            </td>
+
+            <td>{{ (passagem?.dataCompra || passagem?.dataHoraDaCompra) | date:'dd/MM/yyyy HH:mm' }}</td>
+
+            <td>
+              <span class="badge px-3 py-2 d-block text-center"
+                    [ngClass]="passagem?.status === 'APROVADO' ? 'bg-success' : 'bg-warning text-dark'">
+                {{ passagem?.status || 'PENDENTE' }}
+              </span>
+            </td>
           </tr>
           </tbody>
         </table>
       </div>
     </div>
-
     <div *ngIf="subAbaAtiva === 'checkout'">
       <form #formCompra="ngForm" (ngSubmit)="validarEAvancarFluxoCompra(formCompra.value, formCompra)">
         <input type="hidden" name="viagemId" [ngModel]="viagemSelecionadaId">

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import {
   ViagemCompraService,
-  CompraRequestPayload
+  CompraRequestPayload,
+  PassagemResponse,
 } from '../../service/viagem-compra.service';
 
 @Component({
@@ -28,7 +29,7 @@ export class AreaPassageiroComponent implements OnInit {
 
   // Lista dinâmica de passageiros vinculados ao formulário de compra
   listaPassageirosForm: Array<{ nome: string; cpf: string; numeroAssentos: number }> = [
-    { nome: '', cpf: '', numeroAssentos: 1 }
+    { nome: '', cpf: '', numeroAssentos: 1 },
   ];
 
   busca = { origem: '', destino: '', data: '' };
@@ -57,8 +58,8 @@ export class AreaPassageiroComponent implements OnInit {
   listaEmpresasGerais: any[] = [];
 
   constructor(
-      private apiService: ViagemCompraService,
-      private cdr: ChangeDetectorRef
+    private apiService: ViagemCompraService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {
@@ -114,8 +115,11 @@ export class AreaPassageiroComponent implements OnInit {
         this.mensagemErro = '';
       },
       error: (err: any) => {
-        console.warn('Perfil detalhado não localizado no banco (404/403). Usando dados da sessão de login.', err);
-      }
+        console.warn(
+          'Perfil detalhado não localizado no banco (404/403). Usando dados da sessão de login.',
+          err,
+        );
+      },
     });
   }
 
@@ -140,17 +144,17 @@ export class AreaPassageiroComponent implements OnInit {
     this.limparMensagens();
 
     this.apiService
-        .pesquisarViagens(this.busca.origem, this.busca.destino, dataFormatada)
-        .subscribe({
-          next: (viagens: any[]) => {
-            this.viagensDisponiveis = viagens || [];
-            this.pesquisaFeita = true;
-            if (viagens.length === 0) {
-              this.mensagemErro = 'Nenhuma viagem encontrada para este destino na data selecionada.';
-            }
-          },
-          error: () => (this.mensagemErro = 'Erro ao pesquisar viagens no sistema.'),
-        });
+      .pesquisarViagens(this.busca.origem, this.busca.destino, dataFormatada)
+      .subscribe({
+        next: (viagens: any[]) => {
+          this.viagensDisponiveis = viagens || [];
+          this.pesquisaFeita = true;
+          if (viagens.length === 0) {
+            this.mensagemErro = 'Nenhuma viagem encontrada para este destino na data selecionada.';
+          }
+        },
+        error: () => (this.mensagemErro = 'Erro ao pesquisar viagens no sistema.'),
+      });
   }
 
   comprarDisponivel(viagemId: number) {
@@ -165,22 +169,27 @@ export class AreaPassageiroComponent implements OnInit {
       next: (dados: any) => {
         if (dados) {
           this.dadosPerfilPassageiro = dados;
-          this.listaPassageirosForm = [{
-            nome: dados.nome || '',
-            cpf: dados.cpf || '',
-            numeroAssentos: 1
-          }];
+          this.listaPassageirosForm = [
+            {
+              nome: dados.nome || '',
+              cpf: dados.cpf || '',
+              numeroAssentos: 1,
+            },
+          ];
         }
         this.subTelaCompra = 'formulario';
         this.mudarSubAba('checkout');
       },
       error: (err: any) => {
-        console.warn('Tratando erro de perfil ausente (404/403). Abrindo formulário de checkout em branco.', err);
+        console.warn(
+          'Tratando erro de perfil ausente (404/403). Abrindo formulário de checkout em branco.',
+          err,
+        );
 
         this.listaPassageirosForm = [{ nome: '', cpf: '', numeroAssentos: 1 }];
         this.subTelaCompra = 'formulario';
         this.mudarSubAba('checkout');
-      }
+      },
     });
   }
 
@@ -189,7 +198,11 @@ export class AreaPassageiroComponent implements OnInit {
     this.quantidadeSelecionada = qtd;
 
     while (this.listaPassageirosForm.length < qtd) {
-      this.listaPassageirosForm.push({ nome: '', cpf: '', numeroAssentos: this.listaPassageirosForm.length + 1 });
+      this.listaPassageirosForm.push({
+        nome: '',
+        cpf: '',
+        numeroAssentos: this.listaPassageirosForm.length + 1,
+      });
     }
     while (this.listaPassageirosForm.length > qtd) {
       this.listaPassageirosForm.pop();
@@ -208,15 +221,15 @@ export class AreaPassageiroComponent implements OnInit {
     const compraRequestPayload: CompraRequestPayload = {
       usuarioId: Number(this.userId),
       viagemId: Number(this.viagemSelecionadaId),
-      passageiro: this.listaPassageirosForm.map(p => ({
+      passageiro: this.listaPassageirosForm.map((p) => ({
         nome: p.nome,
         cpf: p.cpf,
         numeroAssentos: Number(p.numeroAssentos),
-        quantidadeDeAssentos: totalPassagens
+        quantidadeDeAssentos: totalPassagens,
       })),
       metodo: dadosForm.metodo,
       numeroCartao: dadosForm.numeroCartao || null,
-      cvv: dadosForm.cvv || null
+      cvv: dadosForm.cvv || null,
     };
 
     this.backupHistoricoCompra = compraRequestPayload;
@@ -234,8 +247,9 @@ export class AreaPassageiroComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Erro ao processar a compra:', err);
-        this.mensagemErro = err.error?.message || 'Não foi possível registrar a intenção de compra.';
-      }
+        this.mensagemErro =
+          err.error?.message || 'Não foi possível registrar a intenção de compra.';
+      },
     });
   }
 
@@ -251,7 +265,8 @@ export class AreaPassageiroComponent implements OnInit {
 
     this.apiService.confirmarPagamento(this.idCompraPendente).subscribe({
       next: () => {
-        this.mensagemSucesso = 'Compra realizada com sucesso! O bilhete em formato PDF foi enviado para o seu e-mail.';
+        this.mensagemSucesso =
+          'Compra realizada com sucesso! O bilhete em formato PDF foi enviado para o seu e-mail.';
         if (form) form.resetForm();
 
         this.subTelaCompra = 'sucesso';
@@ -267,20 +282,21 @@ export class AreaPassageiroComponent implements OnInit {
       error: (err: any) => {
         console.error('Erro ao efetuar o PUT de confirmação:', err);
         this.mensagemErro = err.error?.message || 'Falha na aprovação do pagamento.';
-      }
+      },
     });
   }
-
   carregarHistorico() {
     if (!this.userId) this.tentarCarregarUsuarioSessao();
     if (!this.userId || this.userId === 0) return;
 
     this.apiService.obterHistorico(this.userId).subscribe({
-      next: (passagens: any[]) => (this.minhasPassagens = passagens || []),
+      next: (passagens: any[]) => {
+        this.minhasPassagens = passagens || [];
+        console.log('--- DADOS REAIS DO HISTÓRICO ---', passagens);
+      },
       error: () => (this.mensagemErro = 'Erro ao carregar o seu histórico de passagens.'),
     });
   }
-
   atualizarDadosPerfil() {
     if (!this.validarUsuario()) return;
     this.limparMensagens();
