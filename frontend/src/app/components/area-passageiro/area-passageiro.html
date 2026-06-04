@@ -100,11 +100,14 @@
             </td>
 
             <td>
-              <span class="fw-semibold text-primary">{{ passagem?.origem || passagem?.viagem?.rota?.origem || 'Maceió' }}</span>
+  <span class="fw-semibold text-primary">
+    {{ passagem?.passagens?.[0]?.viagem?.rota?.origem || passagem?.viagem?.rota?.origem || 'Não informada' }}
+  </span>
               <i class="bi bi-arrow-right text-muted mx-2"></i>
-              <span class="fw-semibold text-success">{{ passagem?.destino || passagem?.viagem?.rota?.destino || 'Olho d\'Água' }}</span>
+              <span class="fw-semibold text-success">
+    {{ passagem?.passagens?.[0]?.viagem?.rota?.destino || passagem?.viagem?.rota?.destino || 'Não informado' }}
+  </span>
             </td>
-
             <td>{{ (passagem?.dataCompra || passagem?.dataHoraDaCompra) | date:'dd/MM/yyyy HH:mm' }}</td>
 
             <td>

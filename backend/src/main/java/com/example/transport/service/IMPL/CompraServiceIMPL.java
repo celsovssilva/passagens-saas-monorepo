@@ -41,6 +41,9 @@ public class CompraServiceIMPL implements CompraService {
     public CompraResponse comprar(CompraRequest compra) {
         Viagem v = viagemRepository.findById(compra.viagemId())
                 .orElseThrow(()-> new RuntimeException("Viagem não encontrada"));
+        if (v.getDataSaida().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Não é possível comprar passagens para uma viagem que já aconteceu.");
+        }
 
         User comprador = userRepository.findById(compra.usuarioId())
                 .orElseThrow(()-> new RuntimeException("usuário não encontrado"));
@@ -146,6 +149,9 @@ public class CompraServiceIMPL implements CompraService {
         Viagem v = compra.getPassagens().get(0).getViagem();
         if (v == null) {
             throw new RuntimeException("Erro: Viagem não encontrada para esta passagem.");
+        }
+        if (v.getDataSaida().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Não é possível cancelar uma compra de uma viagem que já foi realizada.");
         }
 
         int vagasParaDevolver = compra.getPassagens().size();
