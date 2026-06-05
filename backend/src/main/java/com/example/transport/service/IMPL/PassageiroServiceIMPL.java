@@ -26,9 +26,10 @@
         private PasswordEncoder passwordEncoder;
 
         @Override
-        public Optional<Passageiro> buscarPassageiros(Long idPassageiro) {
-
-            return passageiroRepository.findById(idPassageiro);
+        public PassageiroResponse buscarPassageiros(Long idPassageiro) {
+            Passageiro p = passageiroRepository.findByUserId(idPassageiro)
+                    .orElseThrow(() -> new RuntimeException("Perfil não encontrado"));
+            return new PassageiroResponse(p);
         }
 
         @Override
@@ -68,34 +69,44 @@
             passageiroRepository.deleteById(idPassageiro);
         }
 
+
         @Override
+        @Transactional
         public PassageiroResponse atualizarPassageiro(Long idPassageiro, PassageiroRequest passageiro) {
-            //valida se o id existe
-            Passageiro p = passageiroRepository.findById(idPassageiro)
-                    .orElseThrow(() -> new RuntimeException("Passageiro não encontrado"));
-            //busca email no banco
-            Optional<User> emailExist = userRepository.findByEmail(passageiro.email());
-            //se o email existir e não for do mesmo dono, não deixa atualizar
-            if (emailExist.isPresent() && !emailExist.get().getId().equals(p.getUser().getId())) {
-                throw new RuntimeException("esse email já existe no sistema!");
+
+            Passageiro p = passageiroRepository.findByUserId(idPassageiro).orElse(null);
+
+            User user;
+            if (p == null) {
+                // Se realmente não existir nenhum registro de passageiro associado a este user, cria um novo
+                p = new Passageiro();
+
+                user = userRepository.findById(idPassageiro)
+                        .orElseThrow(() -> new RuntimeException("Usuário base não encontrado no sistema"));
+                p.setUser(user);
             } else {
-                User user = p.getUser();
-                if (user != null) {
-                    user.setEmail(passageiro.email());
-                    if (passageiro.password() != null && !passageiro.password().isBlank()) {
-                        String senha = passwordEncoder.encode(passageiro.password());
-                        user.setPassword(senha);
-                    }
-                }
-
-                p.setNome(passageiro.nome());
-                p.setSobrenome(passageiro.sobrenome());
-                p.setPhone(passageiro.phone());
-                p.setIdade(passageiro.idade());
-
-
-
-                return new PassageiroResponse(passageiroRepository.save(p));
+                user = p.getUser();
             }
+
+            // Valida se o e-mail informado já pertence a outro usuário diferente
+            Optional<User> emailExist = userRepository.findByEmail(passageiro.email());
+            if (emailExist.isPresent() && !emailExist.get().getId().equals(user.getId())) {
+                throw new RuntimeException("Esse e-mail já existe no sistema!");
+            }
+            if (user != null) {
+                user.setEmail(passageiro.email());
+                if (passageiro.password() != null && !passageiro.password().isBlank()) {
+                    String senha = passwordEncoder.encode(passageiro.password());
+                    user.setPassword(senha);
+                }
+                userRepository.save(user);
+            }
+            p.setNome(passageiro.nome());
+            p.setSobrenome(passageiro.sobrenome());
+            p.setPhone(passageiro.phone());
+            p.setIdade(passageiro.idade());
+            return new PassageiroResponse(passageiroRepository.save(p));
+
         }
+
     }

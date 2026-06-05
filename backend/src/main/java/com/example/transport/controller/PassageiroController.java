@@ -28,13 +28,11 @@ public class PassageiroController {
         }
 
     @GetMapping("/buscar/{idPassageiro}")
-    public ResponseEntity<?> buscarPassageiros(@PathVariable Long idPassageiro) {
-        return passageiroService.buscarPassageiros(idPassageiro)
-                .map(passageiro -> ResponseEntity.ok(new PassageiroResponse(passageiro)))
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<PassageiroResponse> buscarPassageiros(@PathVariable Long idPassageiro) {
+        PassageiroResponse response = passageiroService.buscarPassageiros(idPassageiro);
+        return ResponseEntity.ok(response);
     }
-
-        @PutMapping("/atualizar/{idPassageiro}")
+    @PutMapping("/atualizar/{idPassageiro}")
         public ResponseEntity<PassageiroResponse> atualizarPassageiro(@PathVariable Long idPassageiro,@RequestBody PassageiroRequest passageiro){
 
             return ResponseEntity.ok(passageiroService.atualizarPassageiro(idPassageiro,passageiro));

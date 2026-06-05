@@ -27,7 +27,7 @@ export interface PassagemResponse {
   email: string;
   documento: string;
   origem: string;
-  destino: string;
+  Destino: string;
   quantidadeDeAssentos: number;
   dataHoraDaCompra: string;
   numeroAssentos: number;

@@ -11,6 +11,9 @@
       <button (click)="definirTela('frota')" [class.active]="telaAtiva === 'frota'">
         <i class="icon-bus"></i> Minha Frota
       </button>
+      <button (click)="definirTela('viagens')" [class.active]="telaAtiva === 'viagens'">
+        <i class="icon-calendar"></i> Gerenciar Viagens
+      </button>
       <button (click)="definirTela('perfil')" [class.active]="telaAtiva === 'perfil'">
         <i class="icon-user"></i> Dados Cadastrais
       </button>
@@ -91,6 +94,68 @@
             </tr>
             <tr *ngIf="listaMinhaFrota.length === 0">
               <td colspan="5" class="sem-dados text-center">Nenhum veículo vinculado a sua empresa no momento.</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div *ngIf="telaAtiva === 'viagens'">
+      <section class="card shadow">
+        <h3 class="section-title">Cadastrar Nova Viagem Programada</h3>
+        <form #formViagem="ngForm" (ngSubmit)="salvarViagem(formViagem.value, formViagem)">
+          <div class="grid-form">
+            <div class="form-group">
+              <label>Selecione a Rota Geral:</label>
+              <select name="rotaId" ngModel class="form-control" required>
+                <option value="" disabled selected>Escolha a rota registrada...</option>
+                <option *ngFor="let r of listaRotas" [value]="r.id">
+                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) - R$ {{ r.valor }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Selecione o Ônibus Escalonado:</label>
+              <select name="transportId" ngModel class="form-control" required>
+                <option value="" disabled selected>Escolha um veículo ativo...</option>
+                <option *ngFor="let v of listaMinhaFrota" [value]="v.id">
+                  {{ v.modelo }} (#{{ v.id }} - {{ v.capacidade }} Lugares)
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Data e Horário de Saída:</label>
+              <input type="datetime-local" name="dataSaida" ngModel class="form-control" required />
+            </div>
+          </div>
+          <button type="submit" class="btn-submit mt-3" [disabled]="formViagem.invalid">Lançar Viagem no Sistema</button>
+        </form>
+      </section>
+
+      <section class="card shadow mt-4">
+        <h3 class="section-title">Viagens Operadas por Sua Empresa</h3>
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>Origem / Destino</th>
+              <th>Veículo</th>
+              <th>Data/Hora Saída</th>
+              <th>Vagas Ocupadas</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let v of listaMinhasViagens">
+              <td><strong>#{{ v.id }}</strong></td>
+              <td>{{ v.rota?.origem }} → {{ v.rota?.destino }}</td>
+              <td>{{ v.transport?.modelo }}</td>
+              <td>{{ v.dataSaida | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ v.capacidade - v.vagasDisponiveis }} / {{ v.capacidade }}</td>
+            </tr>
+            <tr *ngIf="listaMinhasViagens.length === 0">
+              <td colspan="5" class="sem-dados text-center">Nenhuma viagem agendada para a sua empresa.</td>
             </tr>
             </tbody>
           </table>

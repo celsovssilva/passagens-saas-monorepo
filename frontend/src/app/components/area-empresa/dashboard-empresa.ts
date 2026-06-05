@@ -19,11 +19,13 @@ export class DashboardEmpresaComponent implements OnInit {
   usuarioLogado: any = { email: '', role: '', empresaId: null };
   dadosEmpresa: any = { id: null, razaoSocial: '', cnpj: '', telefone: '', endereco: '' };
 
-  // Coleções de Dados (Apenas a Frota agora)
+  // Coleções de Dados
   listaMinhaFrota: any[] = [];
+  listaRotas: any[] = [];
+  listaMinhasViagens: any[] = [];
 
-  // Indicadores Exigidos
-  passagensCompradas: number = 0; // Fixo em 0 ou vindo de outro local futuramente
+  // Indicadores
+  passagensCompradas: number = 0;
   onibusEmAtividade: number = 0;
 
   constructor(
@@ -54,7 +56,6 @@ export class DashboardEmpresaComponent implements OnInit {
       empresaId: empresaIdStr ? parseInt(empresaIdStr, 10) : null
     };
 
-    // Inicializa apenas o que importa
     this.carregarDadosPerfilEmpresa();
     this.carregarFrota();
   }
@@ -73,6 +74,10 @@ export class DashboardEmpresaComponent implements OnInit {
     this.telaAtiva = tela;
     if (tela === 'inicio' || tela === 'frota') {
       this.carregarFrota();
+    } else if (tela === 'viagens') {
+      this.carregarFrota();
+      this.carregarRotasDoSistema();
+      this.carregarViagensDaEmpresa();
     } else if (tela === 'perfil') {
       this.carregarDadosPerfilEmpresa();
     }
@@ -84,6 +89,7 @@ export class DashboardEmpresaComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  // --- DADOS DA EMPRESA ---
   carregarDadosPerfilEmpresa() {
     if (!this.usuarioLogado.empresaId) return;
 
@@ -98,12 +104,11 @@ export class DashboardEmpresaComponent implements OnInit {
     });
   }
 
-  // >>> ADICIONE ESTE BLOCO AQUI <<<
   atualizarPerfil(form: any) {
     if (form.invalid || !this.usuarioLogado.empresaId) return;
 
     this.http.put(`http://localhost:8080/api/empresa/${this.usuarioLogado.empresaId}`, this.dadosEmpresa, this.obterHeaders()).subscribe({
-      next: (resposta: any) => {
+      next: () => {
         alert('Informações cadastrais salvas e atualizadas com sucesso!');
         this.carregarDadosPerfilEmpresa();
       },
@@ -113,6 +118,7 @@ export class DashboardEmpresaComponent implements OnInit {
       }
     });
   }
+
   // --- OPERAÇÕES DA API: FROTA ---
   carregarFrota() {
     if (!this.usuarioLogado.empresaId) return;
@@ -120,13 +126,8 @@ export class DashboardEmpresaComponent implements OnInit {
     this.http.get<any[]>(`http://localhost:8080/api/transport/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders()).subscribe({
       next: (veiculos) => {
         this.listaMinhaFrota = Array.isArray(veiculos) ? veiculos : [];
-
-        // Atualiza dinamicamente a quantidade de ônibus ativos na tela
         this.onibusEmAtividade = this.listaMinhaFrota.filter(v => v && v.status === 'ATIVO').length;
-
-        // Mantém fixo conforme solicitado já que a rota de viagens foi removida
         this.passagensCompradas = 0;
-
         if (this.cdr) this.cdr.detectChanges();
       },
       error: (err) => {
@@ -167,6 +168,50 @@ export class DashboardEmpresaComponent implements OnInit {
         this.carregarFrota();
       },
       error: (err) => console.error('Erro ao excluir veículo:', err)
+    });
+  }
+
+  // --- OPERAÇÕES DA API: GERENCIAR VIAGENS ---
+  carregarRotasDoSistema() {
+    this.http.get<any[]>('http://localhost:8080/api/rotas', this.obterHeaders()).subscribe({
+      next: (dados) => {
+        this.listaRotas = dados || [];
+        if (this.cdr) this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao listar rotas globais:', err)
+    });
+  }
+
+  carregarViagensDaEmpresa() {
+    if (!this.usuarioLogado.empresaId) return;
+
+    this.http.get<any[]>(`http://localhost:8080/api/viagem/empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders()).subscribe({
+      next: (dados) => {
+        this.listaMinhasViagens = dados || [];
+        if (this.cdr) this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao listar viagens corporativas:', err)
+    });
+  }
+
+  salvarViagem(dadosForm: any, formRef: any) {
+    const payloadViagem = {
+      rota: { id: parseInt(dadosForm.rotaId, 10) },
+      transport: { id: parseInt(dadosForm.transportId, 10) },
+      dataSaida: `${dadosForm.dataSaida}:00`,
+      vagasDisponiveis: null
+    };
+
+    this.http.post('http://localhost:8080/api/viagem', payloadViagem, this.obterHeaders()).subscribe({
+      next: () => {
+        alert('Nova viagem criada e agendada com sucesso!');
+        formRef.resetForm();
+        this.carregarViagensDaEmpresa();
+      },
+      error: (err) => {
+        console.error('Erro ao cadastrar viagem:', err);
+        alert('Verifique os campos ou certifique-se de que o veículo e rota estão corretos.');
+      }
     });
   }
 }

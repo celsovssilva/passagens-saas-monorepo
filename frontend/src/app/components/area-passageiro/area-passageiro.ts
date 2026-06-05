@@ -324,25 +324,17 @@ export class AreaPassageiroComponent implements OnInit {
       });
     }
   }
-  cancelarMinhaCompra(compraId: number) {
-    if (
-        !confirm(
-            'Tem certeza que deseja cancelar esta compra? As vagas serão liberadas imediatamente.',
-        )
-    ) {
-      return;
-    }
 
-    // PASSANDO APENAS O ID (1 argumento), respeitando a assinatura do método
-    this.apiService.cancelarCompra(compraId).subscribe({
-      next: (response) => {
-        alert('Compra cancelada com sucesso!');
-        this.carregarHistorico();
+  cancelarMinhaCompra(id: number): void {
+    this.apiService.cancelarCompra(id).subscribe({
+      next: () => {
+        this.mensagemSucesso = 'Compra cancelada com sucesso!';
+        this.carregarHistorico(); // Atualiza a lista na tela
       },
       error: (error) => {
         console.error('Erro ao cancelar compra:', error);
         alert('Não foi possível cancelar a compra.');
-      },
+      }
     });
   }
   listarTodasAsViagens() {
@@ -379,5 +371,9 @@ export class AreaPassageiroComponent implements OnInit {
   private limparMensagens() {
     this.mensagemSucesso = '';
     this.mensagemErro = '';
+  }
+  deslogarPassageiro() {
+    localStorage.clear();
+    window.location.reload();
   }
 }

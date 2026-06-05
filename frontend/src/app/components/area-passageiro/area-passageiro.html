@@ -2,8 +2,15 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
 <div class="container mt-4">
-  <h2>Área do Passageiro</h2>
-  <p>Bem-vindo ao seu painel, utilize as abas abaixo para navegar.</p>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2>Área do Passageiro</h2>
+      <p class="text-muted mb-0">Bem-vindo ao seu painel, utilize as abas abaixo para navegar.</p>
+    </div>
+    <button class="btn btn-outline-danger" (click)="deslogarPassageiro()">
+      <i class="bi bi-box-arrow-right"></i> Sair do Sistema
+    </button>
+  </div>
 
   <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
@@ -20,6 +27,16 @@
     </li>
     <li class="nav-item">
       <button class="nav-link" [class.active]="subAbaAtiva === 'empresas'" (click)="mudarSubAba('empresas')">Empresas Parceiras</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="subAbaAtiva === 'perfil'" (click)="mudarSubAba('perfil'); carregarDadosPerfilDoBanco();">
+        <i class="bi bi-person-gear"></i> Meu Perfil
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link text-danger" [class.active]="subAbaAtiva === 'deletar-conta'" (click)="mudarSubAba('deletar-conta')">
+        <i class="bi bi-exclamation-triangle"></i> Excluir Conta
+      </button>
     </li>
   </ul>
 
@@ -73,6 +90,7 @@
         </div>
       </div>
     </div>
+
     <div *ngIf="subAbaAtiva === 'historico'">
       <h4 class="mb-3">Seu Histórico de Viagens</h4>
       <div *ngIf="minhasPassagens.length === 0" class="alert alert-info">
@@ -82,38 +100,28 @@
         <table class="table table-striped table-hover align-middle shadow-sm border">
           <thead class="table-dark">
           <tr>
-            <th style="width: 12%">ID Compra</th>
-            <th style="width: 25%">Passageiro</th>
-            <th style="width: 30%">Origem / Destino</th>
-            <th style="width: 15%">Data da Compra</th>
-            <th style="width: 10%">Status</th>
-            <th style="width: 8%">Ações</th>
+            <th style="width: 15%">ID Compra</th>
+            <th style="width: 35%">Passageiro</th>
+            <th style="width: 20%">Data da Compra</th>
+            <th style="width: 15%">Status</th>
+            <th style="width: 15%">Ações</th>
           </tr>
           </thead>
           <tbody>
           <tr *ngFor="let passagem of minhasPassagens">
-            <td><strong>#{{ passagem?.id }}</strong></td>
+            <td><strong>#{{ passagem?.id || passagem?.idCompra }}</strong></td>
 
             <td>
               <i class="bi bi-person-fill text-secondary me-1"></i>
-              {{ passagem?.nomePassageiro || passagem?.passageiros?.[0]?.nome || passagem?.passenger?.[0]?.nome || 'CELSO SILVA' }}
+              {{ passagem?.nomePassageiro || passagem?.passageiros?.[0]?.nome || 'CELSO SILVA' }}
             </td>
 
-            <td>
-  <span class="fw-semibold text-primary">
-    {{ passagem?.passagens?.[0]?.viagem?.rota?.origem || passagem?.viagem?.rota?.origem || 'Não informada' }}
-  </span>
-              <i class="bi bi-arrow-right text-muted mx-2"></i>
-              <span class="fw-semibold text-success">
-    {{ passagem?.passagens?.[0]?.viagem?.rota?.destino || passagem?.viagem?.rota?.destino || 'Não informado' }}
-  </span>
-            </td>
             <td>{{ (passagem?.dataCompra || passagem?.dataHoraDaCompra) | date:'dd/MM/yyyy HH:mm' }}</td>
 
             <td>
               <span class="badge px-3 py-2 d-block text-center"
                     [ngClass]="{
-                      'bg-success': passagem?.status === 'APROVADO',
+                      'bg-success': passagem?.status === 'APROVADO' || passagem?.status === 'CONCLUIDO',
                       'bg-warning text-dark': passagem?.status === 'PENDENTE',
                       'bg-danger': passagem?.status === 'CANCELADO'
                     }">
@@ -124,7 +132,7 @@
             <td>
               <button class="btn btn-outline-danger btn-sm w-100"
                       *ngIf="passagem?.status !== 'CANCELADO'"
-                      (click)="cancelarMinhaCompra(passagem.id)"
+                      (click)="cancelarMinhaCompra(passagem.id || passagem.idCompra)"
                       title="Cancelar Viagem">
                 <i class="bi bi-trash3-fill"></i> Cancelar
               </button>
@@ -137,6 +145,7 @@
         </table>
       </div>
     </div>
+
     <div *ngIf="subAbaAtiva === 'checkout'">
       <form #formCompra="ngForm" (ngSubmit)="validarEAvancarFluxoCompra(formCompra.value, formCompra)">
         <input type="hidden" name="viagemId" [ngModel]="viagemSelecionadaId">
@@ -268,6 +277,53 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div *ngIf="subAbaAtiva === 'perfil'">
+      <div class="card p-4 shadow-sm bg-white border">
+        <h4 class="mb-3 text-primary"><i class="bi bi-person-bounding-box"></i> Atualizar Meus Dados</h4>
+        <p class="text-muted small">Modifique as informações desejadas e clique em salvar para atualizar seus dados cadastrais.</p>
+
+        <form #formPerfil="ngForm" (ngSubmit)="atualizarDadosPerfil()">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nome Completo</label>
+              <input type="text" class="form-control" name="nome" [(ngModel)]="dadosPerfilPassageiro.nome" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Telefone</label>
+              <input type="text" class="form-control" name="phone" [(ngModel)]="dadosPerfilPassageiro.phone" placeholder="Ex: (11) 99999-9999">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">E-mail de Contato</label>
+              <input type="email" class="form-control" name="email" [(ngModel)]="dadosPerfilPassageiro.email" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Idade</label>
+              <input type="number" class="form-control" name="idade" [(ngModel)]="dadosPerfilPassageiro.idade" min="1">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary mt-4 px-4" [disabled]="formPerfil.invalid">
+            <i class="bi bi-cloud-arrow-up-fill"></i> Salvar Alterações
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div *ngIf="subAbaAtiva === 'deletar-conta'">
+      <div class="card p-4 shadow-sm bg-white border border-danger">
+        <h4 class="mb-3 text-danger"><i class="bi bi-exclamation-octagon-fill"></i> Exclusão Definitiva de Conta</h4>
+        <p class="lead text-dark">Você tem certeza que deseja remover seu usuário?</p>
+        <p class="text-muted">Esta ação é irreversível. Todos os seus dados pessoais e histórico de passagens agendadas serão permanentemente apagados do nosso banco de dados.</p>
+
+        <div class="alert alert-warning border-start border-4 border-warning">
+          <i class="bi bi-info-circle-fill"></i> Para fins de segurança, certifique-se de que não possui viagens pendentes antes de efetuar esta operação.
+        </div>
+
+        <button class="btn btn-danger btn-lg mt-2 px-5" (click)="excluirContaPassageiro()">
+          <i class="bi bi-person-x-fill"></i> Sim, desejo excluir minha conta
+        </button>
       </div>
     </div>
 
