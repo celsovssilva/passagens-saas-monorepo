@@ -1,99 +1,123 @@
 <div class="dashboard-container">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h3>Painel Empresa</h3>
+      <h3>Painel Corporativo</h3>
       <span class="empresa-nome">{{ dadosEmpresa.razaoSocial || 'Minha Empresa' }}</span>
     </div>
+
     <nav class="sidebar-menu">
       <button (click)="definirTela('inicio')" [class.active]="telaAtiva === 'inicio'">
-        <i class="icon-home"></i> Início / Indicadores
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="nav-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>
+        Visão Geral
       </button>
+
       <button (click)="definirTela('frota')" [class.active]="telaAtiva === 'frota'">
-        <i class="icon-bus"></i> Minha Frota
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="nav-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.208-3.33a2.993 2.993 0 0 0-2.822-2.796H4.25m15.75 3h-1.5V9A1.5 1.5 0 0 0 17 7.5H7A1.5 1.5 0 0 0 5.5 9v5.25H4.25m15.75 0h.625a1.125 1.125 0 0 0 1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H12" /></svg>
+        Minha Frota
       </button>
+
       <button (click)="definirTela('viagens')" [class.active]="telaAtiva === 'viagens'">
-        <i class="icon-calendar"></i> Gerenciar Viagens
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="nav-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" /></svg>
+        Gerenciar Viagens
       </button>
+
       <button (click)="definirTela('perfil')" [class.active]="telaAtiva === 'perfil'">
-        <i class="icon-user"></i> Dados Cadastrais
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="nav-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 0-6.338 0 .225 2.225 0 0 0-.11.197v.63c0 .121.098.22.218.22h6.43a.225 2.225 0 0 0 .218-.22v-.63a.225 2.225 0 0 0-.11-.197Z" /></svg>
+        Dados Cadastrais
       </button>
     </nav>
+
     <button class="btn-logout" (click)="logout()">Sair do Sistema</button>
   </aside>
 
   <main class="main-content">
     <header class="content-header">
       <h2>Olá, {{ dadosEmpresa.razaoSocial || usuarioLogado.email }}</h2>
-      <p>Acessando com nível de permissão: <strong>{{ usuarioLogado.role }}</strong></p>
+      <p class="subtitle">Gerenciamento administrativo interno — Nível: <span class="badge-role">{{ usuarioLogado.role }}</span></p>
     </header>
 
-    <div *ngIf="telaAtiva === 'inicio'">
+    <div *ngIf="telaAtiva === 'inicio'" class="fade-in">
       <section class="cards-indicadores">
-        <div class="card shadow">
-          <span class="card-label">Passagens Compradas</span>
-          <p class="valor text-primary">{{ passagensCompradas }}</p>
+        <div class="card-metric shadow">
+          <div class="metric-icon bg-light-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#4f46e5" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V20m-9-14v.75m0 3v.75m0 3v.75m0 3V20m-3-12h15c.621 0 1.125-.504 1.125-1.125V4.125c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3 3 3.504 3 4.125v2.625c0 .621.504 1.125 1.125 1.125Zm0 9h15c.621 0 1.125-.504 1.125-1.125v-2.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 12 3 12.504 3 13.125v2.625c0 .621.504 1.125 1.125 1.125Z" /></svg>
+          </div>
+          <div class="metric-info">
+            <span class="card-label">Passagens Vendidas</span>
+            <p class="valor text-primary">{{ passagensCompradas }}</p>
+          </div>
         </div>
-        <div class="card shadow">
-          <span class="card-label">Ônibus em Atividade</span>
-          <p class="valor text-secondary">{{ onibusEmAtividade }}</p>
+
+        <div class="card-metric shadow">
+          <div class="metric-icon bg-light-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#06b6d4" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.208-3.33a2.993 2.993 0 0 0-2.822-2.796H4.25m15.75 3h-1.5V9A1.5 1.5 0 0 0 17 7.5H7A1.5 1.5 0 0 0 5.5 9v5.25H4.25m15.75 0h.625a1.125 1.125 0 0 0 1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H12" /></svg>
+          </div>
+          <div class="metric-info">
+            <span class="card-label">Frota Ativa</span>
+            <p class="valor text-secondary">{{ onibusEmAtividade }}</p>
+          </div>
         </div>
       </section>
     </div>
 
-    <div *ngIf="telaAtiva === 'frota'">
+    <div *ngIf="telaAtiva === 'frota'" class="fade-in">
       <section class="card shadow">
-        <h3 class="section-title">Inserir Novo Ônibus à Frota Dedicada</h3>
+        <h3 class="section-title">Vincular Novo Ônibus à Frota</h3>
         <form #formFrota="ngForm" (ngSubmit)="salvarVeiculo(formFrota.value, formFrota)">
           <div class="grid-form">
             <div class="form-group">
-              <label>Modelo / Identificação do Carro:</label>
+              <label>Modelo / Identificação:</label>
               <input type="text" name="modelo" ngModel class="form-control" placeholder="Ex: Marcopolo Paradiso G8" required />
             </div>
             <div class="form-group">
-              <label>Capacidade Total de Passageiros:</label>
+              <label>Capacidade Max. de Passageiros:</label>
               <input type="number" name="capacidade" ngModel class="form-control" placeholder="Ex: 42" required />
             </div>
             <div class="form-group">
-              <label>Status Operacional Inicial:</label>
+              <label>Status Operacional:</label>
               <select name="status" ngModel="ATIVO" class="form-control" required>
-                <option value="ATIVO">Disponível para Viagens (ATIVO)</option>
-                <option value="MANUTENCAO">Em Oficina (MANUTENÇÃO)</option>
+                <option value="ATIVO">Disponível para Viagens</option>
+                <option value="MANUTENCAO">Em Manutenção / Oficina</option>
               </select>
             </div>
           </div>
-          <button type="submit" class="btn-submit mt-3" [disabled]="formFrota.invalid">Cadastrar Veículo</button>
+          <div class="flex-end-row">
+            <button type="submit" class="btn-submit mt-3" [disabled]="formFrota.invalid">Cadastrar Veículo</button>
+          </div>
         </form>
       </section>
 
       <section class="card shadow mt-4">
-        <h3 class="section-title">Frota Ativa Sob Sua Gestão</h3>
+        <h3 class="section-title">Frota Sob Sua Gestão</h3>
         <div class="table-responsive">
           <table class="custom-table">
             <thead>
             <tr>
-              <th>ID Interno</th>
+              <th>ID</th>
               <th>Modelo / Descrição</th>
-              <th>Assentos Físicos</th>
+              <th>Capacidade Física</th>
               <th>Status</th>
-              <th>Ações</th>
+              <th class="text-center">Ações</th>
             </tr>
             </thead>
             <tbody>
             <tr *ngFor="let veiculo of listaMinhaFrota">
-              <td><strong>#{{ veiculo.id }}</strong></td>
-              <td>{{ veiculo.modelo }}</td>
-              <td>{{ veiculo.capacidade }} assentos disponíveis</td>
+              <td><span class="table-id">#{{ veiculo.id }}</span></td>
+              <td class="font-semibold">{{ veiculo.modelo }}</td>
+              <td>{{ veiculo.capacidade }} assentos</td>
               <td>
                   <span class="status-badge" [ngClass]="veiculo.status?.toLowerCase()">
                     {{ veiculo.status }}
                   </span>
               </td>
-              <td>
-                <button class="btn-action btn-delete" (click)="deletarTransporte(veiculo.id)">Remover da Frota</button>
+              <td class="text-center">
+                <button class="btn-action-delete" (click)="deletarTransporte(veiculo.id)" title="Remover da Frota">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                </button>
               </td>
             </tr>
             <tr *ngIf="listaMinhaFrota.length === 0">
-              <td colspan="5" class="sem-dados text-center">Nenhum veículo vinculado a sua empresa no momento.</td>
+              <td colspan="5" class="sem-dados">Nenhum veículo vinculado à sua empresa no momento.</td>
             </tr>
             </tbody>
           </table>
@@ -101,22 +125,22 @@
       </section>
     </div>
 
-    <div *ngIf="telaAtiva === 'viagens'">
+    <div *ngIf="telaAtiva === 'viagens'" class="fade-in">
       <section class="card shadow">
-        <h3 class="section-title">Cadastrar Nova Viagem Programada</h3>
+        <h3 class="section-title">Agendar Nova Viagem Operacional</h3>
         <form #formViagem="ngForm" (ngSubmit)="salvarViagem(formViagem.value, formViagem)">
           <div class="grid-form">
             <div class="form-group">
-              <label>Selecione a Rota Geral:</label>
+              <label>Rota Geral:</label>
               <select name="rotaId" ngModel class="form-control" required>
                 <option value="" disabled selected>Escolha a rota registrada...</option>
                 <option *ngFor="let r of listaRotas" [value]="r.id">
-                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) - R$ {{ r.valor }}
+                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) — R$ {{ r.valor }}
                 </option>
               </select>
             </div>
             <div class="form-group">
-              <label>Selecione o Ônibus Escalonado:</label>
+              <label>Veículo Alocado:</label>
               <select name="transportId" ngModel class="form-control" required>
                 <option value="" disabled selected>Escolha um veículo ativo...</option>
                 <option *ngFor="let v of listaMinhaFrota" [value]="v.id">
@@ -125,16 +149,18 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Data e Horário de Saída:</label>
+              <label>Data e Horário de Partida:</label>
               <input type="datetime-local" name="dataSaida" ngModel class="form-control" required />
             </div>
           </div>
-          <button type="submit" class="btn-submit mt-3" [disabled]="formViagem.invalid">Lançar Viagem no Sistema</button>
+          <div class="flex-end-row">
+            <button type="submit" class="btn-submit mt-3" [disabled]="formViagem.invalid">Lançar Viagem</button>
+          </div>
         </form>
       </section>
 
       <section class="card shadow mt-4">
-        <h3 class="section-title">Viagens Operadas por Sua Empresa</h3>
+        <h3 class="section-title">Linhas Operadas por Sua Empresa</h3>
         <div class="table-responsive">
           <table class="custom-table">
             <thead>
@@ -142,20 +168,24 @@
               <th>ID</th>
               <th>Origem / Destino</th>
               <th>Veículo</th>
-              <th>Data/Hora Saída</th>
+              <th>Data/Hora Partida</th>
               <th>Vagas Ocupadas</th>
             </tr>
             </thead>
             <tbody>
             <tr *ngFor="let v of listaMinhasViagens">
-              <td><strong>#{{ v.id }}</strong></td>
-              <td>{{ v.rota?.origem }} → {{ v.rota?.destino }}</td>
+              <td><span class="table-id">#{{ v.id }}</span></td>
+              <td class="font-semibold">{{ v.rota?.origem }} → {{ v.rota?.destino }}</td>
               <td>{{ v.transport?.modelo }}</td>
-              <td>{{ v.dataSaida | date:'dd/MM/yyyy HH:mm' }}</td>
-              <td>{{ v.capacidade - v.vagasDisponiveis }} / {{ v.capacidade }}</td>
+              <td class="text-muted">{{ v.dataSaida | date:'dd/MM/yyyy • HH:mm' }}h</td>
+              <td>
+                  <span class="vagas-counter">
+                    {{ v.capacidade - v.vagasDisponiveis }} / {{ v.capacidade }}
+                  </span>
+              </td>
             </tr>
             <tr *ngIf="listaMinhasViagens.length === 0">
-              <td colspan="5" class="sem-dados text-center">Nenhuma viagem agendada para a sua empresa.</td>
+              <td colspan="5" class="sem-dados">Nenhuma viagem agendada para a sua empresa.</td>
             </tr>
             </tbody>
           </table>
@@ -163,9 +193,9 @@
       </section>
     </div>
 
-    <div *ngIf="telaAtiva === 'perfil'">
-      <section class="card shadow max-width-600">
-        <h3 class="section-title">Dados Jurídicos da Empresa</h3>
+    <div *ngIf="telaAtiva === 'perfil'" class="fade-in">
+      <section class="card shadow max-width-700">
+        <h3 class="section-title">Dados Corporativos e Jurídicos</h3>
         <form #formPerfil="ngForm" (ngSubmit)="atualizarPerfil(formPerfil)">
           <div class="grid-form">
             <div class="form-group">
@@ -173,19 +203,21 @@
               <input type="text" name="razaoSocial" [(ngModel)]="dadosEmpresa.razaoSocial" class="form-control" required />
             </div>
             <div class="form-group">
-              <label>CNPJ Corporativo:</label>
+              <label>CNPJ Corporativo (Imutável):</label>
               <input type="text" name="cnpj" [(ngModel)]="dadosEmpresa.cnpj" class="form-control input-readonly" readonly />
             </div>
             <div class="form-group">
-              <label>Telefone Comercial:</label>
-              <input type="text" name="telefone" [(ngModel)]="dadosEmpresa.telefone" class="form-control" />
+              <label>Telefone de Contato:</label>
+              <input type="text" name="telefone" [(ngModel)]="dadosEmpresa.telefone" class="form-control" placeholder="(00) 00000-0000" />
             </div>
             <div class="form-group">
-              <label>Endereço / Sede Administrativa:</label>
-              <input type="text" name="endereco" [(ngModel)]="dadosEmpresa.endereco" class="form-control" />
+              <label>Endereço Matriz:</label>
+              <input type="text" name="endereco" [(ngModel)]="dadosEmpresa.endereco" class="form-control" placeholder="Rua, Número, Bairro, Cidade - UF" />
             </div>
           </div>
-          <button type="submit" class="btn-submit mt-3" [disabled]="formPerfil.invalid">Atualizar Informações Comerciais</button>
+          <div class="flex-end-row">
+            <button type="submit" class="btn-submit mt-3" [disabled]="formPerfil.invalid">Salvar Alterações</button>
+          </div>
         </form>
       </section>
     </div>
