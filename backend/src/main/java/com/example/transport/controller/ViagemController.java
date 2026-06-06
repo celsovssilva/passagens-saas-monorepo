@@ -1,9 +1,12 @@
 package com.example.transport.controller;
 
+import com.example.transport.entity.Transport;
 import com.example.transport.entity.Viagem;
 import com.example.transport.request.ViagemRequest;
 import com.example.transport.response.PassageiroResponse;
+import com.example.transport.response.TransportResponse;
 import com.example.transport.response.ViagemResponse;
+import com.example.transport.service.TransportService;
 import com.example.transport.service.ViagemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,6 +22,8 @@ import java.util.Optional;
 public class ViagemController {
     @Autowired
     ViagemService viagemService;
+    @Autowired
+    TransportService transportService;
 
     @PostMapping("/agendar")
     public ResponseEntity<ViagemResponse> agendarViagem(@RequestBody ViagemRequest viagem){
@@ -55,8 +60,11 @@ public class ViagemController {
         return ResponseEntity.ok(viagemService.listarTodasAsViagensRealizadas());
     }
     @GetMapping("/buscar-por-empresa/{empresaId}")
-    public ResponseEntity<List<Viagem>> listarPorEmpresa(@PathVariable Long empresaId) {
-        List<Viagem> viagens = viagemService.listarViagensPorEmpresa(empresaId);
-        return ResponseEntity.ok(viagens);
+    public ResponseEntity<List<ViagemResponse>> listarPorEmpresa(@PathVariable Long empresaId) {
+        return ResponseEntity.ok(
+                viagemService.listarViagensPorEmpresa(empresaId).stream()
+                        .map(ViagemResponse::new)
+                        .toList()
+        );
     }
 }

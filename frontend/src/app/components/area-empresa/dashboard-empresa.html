@@ -16,6 +16,11 @@
         Minha Frota
       </button>
 
+      <button (click)="definirTela('rotas')" [class.active]="telaAtiva === 'rotas'">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="nav-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" /></svg>
+        Cadastrar Rota
+      </button>
+
       <button (click)="definirTela('viagens')" [class.active]="telaAtiva === 'viagens'">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="nav-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" /></svg>
         Gerenciar Viagens
@@ -33,7 +38,7 @@
   <main class="main-content">
     <header class="content-header">
       <h2>Olá, {{ dadosEmpresa.razaoSocial || usuarioLogado.email }}</h2>
-      <p class="subtitle">Gerenciamento administrativo interno — Nível: <span class="badge-role">{{ usuarioLogado.role }}</span></p>
+      <p class="subtitle">Gerenciamento administrative interno — Nível: <span class="badge-role">{{ usuarioLogado.role }}</span></p>
     </header>
 
     <div *ngIf="telaAtiva === 'inicio'" class="fade-in">
@@ -125,6 +130,43 @@
       </section>
     </div>
 
+    <div *ngIf="telaAtiva === 'rotas'" class="fade-in">
+      <section class="card shadow">
+        <h3 class="section-title">Cadastrar Nova Rota Comercial</h3>
+        <form #formRota="ngForm" (ngSubmit)="salvarItinerarioRota(formRota.value, formRota)">
+          <div class="grid-form">
+            <div class="form-group">
+              <label>Cidade Origem:</label>
+              <input type="text" name="origem" ngModel class="form-control" placeholder="Ex: Maceió" required />
+            </div>
+            <div class="form-group">
+              <label>UF Origem:</label>
+              <input type="text" name="ufOrigem" ngModel class="form-control" placeholder="Ex: AL" maxlength="2" required />
+            </div>
+            <div class="form-group">
+              <label>Cidade Destino:</label>
+              <input type="text" name="destino" ngModel class="form-control" placeholder="Ex: Recife" required />
+            </div>
+            <div class="form-group">
+              <label>UF Destino:</label>
+              <input type="text" name="ufDestino" ngModel class="form-control" placeholder="Ex: PE" maxlength="2" required />
+            </div>
+            <div class="form-group">
+              <label>Preço Base da Passagem (R$):</label>
+              <input type="number" name="valorBase" ngModel class="form-control" placeholder="Ex: 120.00" step="0.01" required />
+            </div>
+            <div class="form-group">
+              <label>Horário Padrão de Saída:</label>
+              <input type="time" name="horarioPadrao" ngModel class="form-control" required />
+            </div>
+          </div>
+          <div class="flex-end-row">
+            <button type="submit" class="btn-submit mt-3" [disabled]="formRota.invalid">Salvar Rota</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
     <div *ngIf="telaAtiva === 'viagens'" class="fade-in">
       <section class="card shadow">
         <h3 class="section-title">Agendar Nova Viagem Operacional</h3>
@@ -135,7 +177,7 @@
               <select name="rotaId" ngModel class="form-control" required>
                 <option value="" disabled selected>Escolha a rota registrada...</option>
                 <option *ngFor="let r of listaRotas" [value]="r.id">
-                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) — R$ {{ r.valor }}
+                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) — R$ {{ r.valorBase | number:'1.2-2' }}
                 </option>
               </select>
             </div>
@@ -169,21 +211,15 @@
               <th>Origem / Destino</th>
               <th>Veículo</th>
               <th>Data/Hora Partida</th>
-              <th>Vagas Ocupadas</th>
-            </tr>
+              <th>Preço Passagem</th> </tr>
             </thead>
             <tbody>
             <tr *ngFor="let v of listaMinhasViagens">
-              <td><span class="table-id">#{{ v.id }}</span></td>
-              <td class="font-semibold">{{ v.rota?.origem }} → {{ v.rota?.destino }}</td>
-              <td>{{ v.transport?.modelo }}</td>
-              <td class="text-muted">{{ v.dataSaida | date:'dd/MM/yyyy • HH:mm' }}h</td>
-              <td>
-                  <span class="vagas-counter">
-                    {{ v.capacidade - v.vagasDisponiveis }} / {{ v.capacidade }}
-                  </span>
-              </td>
-            </tr>
+              <td>#{{ v.id }}</td>
+              <td>{{ v.origem }} → {{ v.destino }}</td>
+              <td>{{ v.veiculo }}</td>
+              <td>{{ v.dataPartida | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>R$ {{ v.valor | number:'1.2-2' }}</td> </tr>
             <tr *ngIf="listaMinhasViagens.length === 0">
               <td colspan="5" class="sem-dados">Nenhuma viagem agendada para a sua empresa.</td>
             </tr>

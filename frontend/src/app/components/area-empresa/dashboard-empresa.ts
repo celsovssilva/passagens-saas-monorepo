@@ -165,7 +165,6 @@ export class DashboardEmpresaComponent implements OnInit {
   carregarFrota() {
     if (!this.usuarioLogado.empresaId) return;
 
-    // ✅ ROTA CORRIGIDA: Apontando para api/transport/buscar-por-empresa/
     this.http
       .get<
         any[]
@@ -176,7 +175,8 @@ export class DashboardEmpresaComponent implements OnInit {
             this.listaMinhaFrota = dados.map((t: any) => ({
               id: t.id || t.idTransporte || t.id_transporte,
               modelo: t.modelo || 'Modelo Não Definido',
-              capacidade: t.capacidade || t.vagas || 0,
+              // Agora lê "capacidade" diretamente da resposta tratada do DTO
+              capacidade: t.capacidade || 0,
               status: t.status || 'ATIVO',
             }));
 
@@ -237,7 +237,6 @@ export class DashboardEmpresaComponent implements OnInit {
       });
   }
 
-  // --- OPERAÇÕES DA API: GERENCIAR VIAGENS ---
   carregarOperacoes() {
     this.http.get<any[]>('http://localhost:8080/api/rotas', this.obterHeaders()).subscribe({
       next: (dados) => {
@@ -250,37 +249,38 @@ export class DashboardEmpresaComponent implements OnInit {
     if (!this.usuarioLogado.empresaId) return;
 
     this.http
-      .get<
-        any[]
-      >(`http://localhost:8080/api/viagem/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
-      .subscribe({
-        next: (dados) => {
-          if (Array.isArray(dados)) {
-            this.listaMinhasViagens = dados;
+        .get<any[]>(`http://localhost:8080/api/viagem/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
+        .subscribe({
+          next: (dados) => {
+            if (Array.isArray(dados)) {
+              let passageirosContados = 0;
+              let receitaSomada = 0;
 
-            let passageirosContados = 0;
-            let receitaSomada = 0;
+              this.listaMinhasViagens = dados.map((viagem) => {
+                const vagas = viagem.vagasDisponiveis ?? 0;
+                // O preço base vem direto do campo 'valor' enviado pelo ViagemResponse do Java
+                const preco = viagem.valor || 0;
 
-            this.listaMinhasViagens.forEach((viagem) => {
-              const capacidadeTotal = viagem.capacidade || viagem.transport?.capacidade || 42;
-              const vagasRestantes =
-                viagem.vagasDisponiveis !== undefined ? viagem.vagasDisponiveis : capacidadeTotal;
-              const passagensCompradas = capacidadeTotal - vagasRestantes;
+                return {
+                  id: viagem.id,
+                  origem: viagem.origem || '—',
+                  destino: viagem.destino || '—',
+                  veiculo: viagem.transporteModelo || 'Não Alocado',
+                  dataPartida: viagem.dataSaida || '',
+                  vagasOcupadas: 0,
+                  capacidadeTotal: vagas,
+                  valor: preco // ✅ Adicionado para o HTML conseguir renderizar o preço na tabela!
+                };
+              });
 
-              if (passagensCompradas > 0) {
-                passageirosContados += passagensCompradas;
-                const precoPassagem = viagem.valor || viagem.rota?.valor || 120.0;
-                receitaSomada += passagensCompradas * precoPassagem;
-              }
-            });
-
-            this.totalPassageirosAtendidos = passageirosContados;
-            this.receitaOperacional = receitaSomada;
-          }
-          if (this.cdr) this.cdr.detectChanges();
-        },
-        error: (err) => console.error('Erro ao listar viagens corporativas:', err),
-      });
+              // Atualiza cards superiores
+              this.totalPassageirosAtendidos = passageirosContados;
+              this.receitaOperacional = receitaSomada;
+            }
+            if (this.cdr) this.cdr.detectChanges();
+          },
+          error: (err) => console.error('Erro ao listar viagens corporativas:', err),
+        });
   }
 
   salvarItinerarioRota(dadosForm: any, form: NgForm) {

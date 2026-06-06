@@ -20,23 +20,14 @@ public class TransportController {
     @PostMapping("/cadastrar")
     public ResponseEntity<TransportResponse> cadastrar(@RequestBody TransportRequest transport){
         Transport t = transportService.cadastrar(transport);
-        TransportResponse response = new TransportResponse(
-                transport.modelo(),
-                transport.capacidade(),
-                transport.status()
-        );
+        TransportResponse response = new TransportResponse(t);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/atualizar/{id}")
     public ResponseEntity<TransportResponse> atualizar(@PathVariable Long id, @RequestBody TransportRequest transport){
         Transport t = transportService.atualizar(id, transport);
-        TransportResponse response = new TransportResponse(
-                transport.modelo(),
-                transport.capacidade(),
-                transport.status()
-
-        );
+        TransportResponse response = new TransportResponse(t);
         return ResponseEntity.ok(response);
     }
 
@@ -57,8 +48,11 @@ public class TransportController {
         return ResponseEntity.ok(transportService.listarTodas());
     }
     @GetMapping("/buscar-por-empresa/{empresaId}")
-    public ResponseEntity<List<Transport>> listarPorEmpresa(@PathVariable Long empresaId) {
-        List<Transport> frota = transportService.listarPorEmpresa(empresaId);
-        return ResponseEntity.ok(frota);
+    public ResponseEntity<List<TransportResponse>> listarPorEmpresa(@PathVariable Long empresaId) {
+        return ResponseEntity.ok(
+                transportService.listarPorEmpresa(empresaId).stream()
+                        .map(TransportResponse::new)
+                        .toList()
+        );
     }
 }
