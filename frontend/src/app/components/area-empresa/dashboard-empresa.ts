@@ -128,10 +128,10 @@ export class DashboardEmpresaComponent implements OnInit {
           if (dados) {
             this.dadosEmpresa = {
               id: this.usuarioLogado.empresaId,
-              razaoSocial: dados.razaoSocial || dados.razao_social || 'Empresa Parcelera',
-              cnpj: dados.cnpj,
-              telefone: dados.telefone || '',
-              endereco: dados.endereco || '',
+              razaoSocial: dados.razaoSocial || dados.razao_social || '',
+              cnpj: dados.cnpj || '', // Armazena o CNPJ puro vindo do banco
+              telefone: dados.telefone || '', // Armazena o Telefone puro vindo do banco
+              endereco: dados.endereco || '', // Armazena o Endereço puro vindo do banco
             };
             if (this.cdr) this.cdr.detectChanges();
           }
@@ -165,11 +165,11 @@ export class DashboardEmpresaComponent implements OnInit {
   carregarFrota() {
     if (!this.usuarioLogado.empresaId) return;
 
+    // ✅ ROTA CORRIGIDA: Apontando para api/transport/buscar-por-empresa/
     this.http
-      .get<any[]>(
-        `http://localhost:8080/api/empresa/buscar-transporte/${this.usuarioLogado.empresaId}`,
-        this.obterHeaders()
-      )
+      .get<
+        any[]
+      >(`http://localhost:8080/api/transport/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
       .subscribe({
         next: (dados) => {
           if (Array.isArray(dados)) {
@@ -194,7 +194,6 @@ export class DashboardEmpresaComponent implements OnInit {
         },
       });
   }
-
   salvarVeiculo(dadosForm: any, formRef: NgForm) {
     // Se não houver ID da empresa cadastrado na sessão, avisa antes de enviar
     if (!this.usuarioLogado.empresaId) {
@@ -205,7 +204,7 @@ export class DashboardEmpresaComponent implements OnInit {
 
     const payloadVeiculo = {
       modelo: dadosForm.modelo,
-      capaciade: Number(dadosForm.capacidade), // Certifique-se de que o Java usa "vagas"
+      capacidade: Number(dadosForm.capacidade), // Certifique-se de que o Java usa "vagas"
       status: dadosForm.status || 'ATIVO',
       empresaId: Number(this.usuarioLogado.empresaId),
     };
@@ -221,7 +220,7 @@ export class DashboardEmpresaComponent implements OnInit {
         error: (err) => {
           console.error('Falha ao registrar novo veículo corporativo:', err);
           alert('O servidor rejeitou o cadastro. Verifique o console do Spring Boot.');
-        }
+        },
       });
   }
   deletarTransporte(id: number) {
@@ -251,10 +250,9 @@ export class DashboardEmpresaComponent implements OnInit {
     if (!this.usuarioLogado.empresaId) return;
 
     this.http
-      .get<any[]>(
-        `http://localhost:8080/api/viagem/buscar-por-empresa/${this.usuarioLogado.empresaId}`,
-        this.obterHeaders()
-      )
+      .get<
+        any[]
+      >(`http://localhost:8080/api/viagem/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
       .subscribe({
         next: (dados) => {
           if (Array.isArray(dados)) {

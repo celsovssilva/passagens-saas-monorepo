@@ -198,22 +198,27 @@
         <h3 class="section-title">Dados Corporativos e Jurídicos</h3>
         <form #formPerfil="ngForm" (ngSubmit)="atualizarPerfil(formPerfil)">
           <div class="grid-form">
+
             <div class="form-group">
               <label>Razão Social:</label>
               <input type="text" name="razaoSocial" [(ngModel)]="dadosEmpresa.razaoSocial" class="form-control" required />
             </div>
+
             <div class="form-group">
               <label>CNPJ Corporativo (Imutável):</label>
               <input type="text" name="cnpj" [(ngModel)]="dadosEmpresa.cnpj" class="form-control input-readonly" readonly />
             </div>
+
             <div class="form-group">
               <label>Telefone de Contato:</label>
               <input type="text" name="telefone" [(ngModel)]="dadosEmpresa.telefone" class="form-control" placeholder="(00) 00000-0000" />
             </div>
+
             <div class="form-group">
               <label>Endereço Matriz:</label>
               <input type="text" name="endereco" [(ngModel)]="dadosEmpresa.endereco" class="form-control" placeholder="Rua, Número, Bairro, Cidade - UF" />
             </div>
+
           </div>
           <div class="flex-end-row">
             <button type="submit" class="btn-submit mt-3" [disabled]="formPerfil.invalid">Salvar Alterações</button>
