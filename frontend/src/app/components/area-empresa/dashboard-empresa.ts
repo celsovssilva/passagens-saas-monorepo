@@ -42,6 +42,7 @@ export class DashboardEmpresaComponent implements OnInit {
   // Fallbacks de propriedades para binds antigos do dropdown
   idRotaSelecionada: any = '';
   idTransporteSelecionado: any = '';
+  dataSaidaCampo: string = '';
 
   constructor(
     private http: HttpClient,
@@ -168,15 +169,22 @@ export class DashboardEmpresaComponent implements OnInit {
         .get<any[]>(`http://localhost:8080/api/transport/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
         .subscribe({
           next: (dados) => {
+            console.log('Dados brutos recebidos da frota:', dados);
+
             if (Array.isArray(dados)) {
-              this.listaMinhaFrota = dados.map((t: any) => ({
-                // Garante mapeamento correto mapeando tanto id quanto chaves alternativas comuns do DTO
-                id: t.id ?? t.idTransporte ?? t.id_transporte,
-                modelo: t.modelo || 'Modelo Não Definido',
-                // Sincronizado com o campo mapeado no banco: "vagas"
-                capacidade: t.vagas ?? t.capacidade ?? 0,
-                status: t.status || 'ATIVO',
-              }));
+              this.listaMinhaFrota = dados.map((t: any) => {
+                // Agora t.id existirá vindo do DTO Java atualizado!
+                const idReal = t.id ?? t.transportId ?? t.idTransporte;
+
+                return {
+                  id: idReal,
+                  idTransporte: idReal,
+                  transportId: idReal,
+                  modelo: t.modelo || 'Modelo Não Definido',
+                  capacidade: t.vagas ?? t.capacidade ?? 0,
+                  status: t.status || 'ATIVO',
+                };
+              });
 
               this.totalVeiculosAtivos = this.listaMinhaFrota.filter(
                   (v) => v.status === 'ATIVO',
@@ -210,18 +218,18 @@ export class DashboardEmpresaComponent implements OnInit {
     };
 
     this.http
-        .post('http://localhost:8080/api/transport/cadastrar', payloadVeiculo, this.obterHeaders())
-        .subscribe({
-          next: () => {
-            alert('Veículo adicionado com sucesso à frota!');
-            formRef.resetForm({ status: 'ATIVO' });
-            this.carregarFrota();
-          },
-          error: (err) => {
-            console.error('Falha ao registrar novo veículo corporativo:', err);
-            alert('O servidor rejeitou o cadastro. Verifique as chaves do JSON.');
-          },
-        });
+      .post('http://localhost:8080/api/transport/cadastrar', payloadVeiculo, this.obterHeaders())
+      .subscribe({
+        next: () => {
+          alert('Veículo adicionado com sucesso à frota!');
+          formRef.resetForm({ status: 'ATIVO' });
+          this.carregarFrota();
+        },
+        error: (err) => {
+          console.error('Falha ao registrar novo veículo corporativo:', err);
+          alert('O servidor rejeitou o cadastro. Verifique as chaves do JSON.');
+        },
+      });
   }
   deletarTransporte(id: number) {
     if (!confirm('Deseja realmente remover este veículo?')) return;
@@ -313,51 +321,82 @@ export class DashboardEmpresaComponent implements OnInit {
         error: (err) => console.error('Erro ao cadastrar rota no servidor:', err),
       });
   }
-
   salvarViagem(valoresForm: any, formRef: any) {
-    // Busca prioritariamente das variáveis ligadas pelo [(ngModel)] e faz fallback para o form bruto
-    const idDaRota = this.idRotaSelecionada || valoresForm?.rotaId;
-    const idDoTransporte = this.idTransporteSelecionado || valoresForm?.transportId;
+    console.log('--- Botão Clicado! ---');
+    console.log('Valores brutos recebidos do formulário:', valoresForm);
 
-    const rotaNum = parseInt(idDaRota, 10);
-    const transportNum = parseInt(idDoTransporte, 10);
+    // 1. Captura os dados tanto do parâmetro do formulário quanto das variáveis de escopo (Garantia dupla)
+    const rotaIdRaw = valoresForm?.rotaId || this.idRotaSelecionada;
+    const transportIdRaw = valoresForm?.transportId || this.idTransporteSelecionado;
+    const dataDeSaida = valoresForm?.dataSaida || this.dataSaidaCampo;
 
-    if (isNaN(rotaNum) || isNaN(transportNum) || !valoresForm?.dataSaida) {
-      alert('Por favor, selecione uma rota, um veículo válido da sua frota ativa e uma data de saída!');
+    const rotaIdFinal = rotaIdRaw ? Number(rotaIdRaw) : 0;
+    const transportIdFinal = transportIdRaw ? Number(transportIdRaw) : 0;
+
+    console.log(
+      `IDs Processados -> Rota: ${rotaIdFinal}, Veículo: ${transportIdFinal}, Data: ${dataDeSaida}`,
+    );
+
+    // 2. Validação manual em TypeScript (Substitui a trava do botão)
+    if (
+      !rotaIdFinal ||
+      !transportIdFinal ||
+      isNaN(rotaIdFinal) ||
+      isNaN(transportIdFinal) ||
+      !dataDeSaida
+    ) {
+      alert(
+        'Por favor, selecione uma rota geral, um veículo válido e defina a data/horário de saída!',
+      );
       return;
     }
 
+    // 3. Localiza o veículo na lista para extrair a capacidade
+    const veiculoCompleto = this.listaMinhaFrota.find((v) => Number(v.id) === transportIdFinal);
+    const capacidadeDefinida = Number(veiculoCompleto?.capacidade || veiculoCompleto?.vagas || 10);
+
+    // 4. Montagem do Payload idêntico ao esperado pela Entidade do Spring Boot
     const payloadRequest = {
-      id: null,
-      rotaId: rotaNum,
-      transportId: transportNum,
-      dataSaida: valoresForm.dataSaida,
-      empresaId: this.usuarioLogado?.empresaId || this.dadosEmpresa?.id || null,
-      capacidade: null,
-      vagasDisponiveis: null,
-      cpf: null,
-      nomePassageiro: null,
-      userId: null,
+      id: 0,
+      rotaId: rotaIdFinal,
+      transportId: transportIdFinal,
+      dataSaida: dataDeSaida,
+      empresaId: Number(this.usuarioLogado?.empresaId || 4),
+      capacidade: capacidadeDefinida,
+      vagasDisponiveis: capacidadeDefinida,
+      userId: Number(this.usuarioLogado?.id || 1),
+      cpf: this.dadosEmpresa?.cnpj || '00000000000000',
+      nomePassageiro: this.dadosEmpresa?.razaoSocial || 'EMPRESA OPERADORA',
     };
 
-    console.log('Dados saindo do Angular para o Java:', payloadRequest);
+    console.log('Payload montado com sucesso. Enviando via POST...', payloadRequest);
 
-    this.http.post('http://localhost:8080/api/viagem/cadastrar', payloadRequest, this.obterHeaders()).subscribe({
-      next: () => {
-        alert('Viagem cadastrada com sucesso!');
+    this.http
+      .post('http://localhost:8080/api/viagem/cadastrar', payloadRequest, this.obterHeaders())
+      .subscribe({
+        next: (res) => {
+          console.log('Resposta de sucesso do Spring Boot:', res);
+          alert('Viagem cadastrada com sucesso!');
 
-        // Reseta os selects para o estado inicial padrão
-        this.idRotaSelecionada = '';
-        this.idTransporteSelecionado = '';
+          // Limpa os campos do formulário na tela
+          this.idRotaSelecionada = '';
+          this.idTransporteSelecionado = '';
+          this.dataSaidaCampo = '';
 
-        if (formRef) formRef.resetForm();
-        this.carregarOperacoes(); // Atualiza a tabela na tela
-      },
-      error: (err) => {
-        console.error('Erro no servidor:', err);
-        alert('Falha ao cadastrar no banco de dados. Verifique o terminal do Spring.');
-      }
-    });
+          if (formRef && typeof formRef.resetForm === 'function') {
+            formRef.resetForm();
+          }
+
+          // Recarrega a listagem de viagens atualizada
+          this.carregarOperacoes();
+        },
+        error: (err) => {
+          console.error('O back-end Java retornou um erro HTTP:', err);
+          alert(
+            'Erro ao salvar no banco de dados. Olhe o console do Eclipse/IntelliJ para ver a restrição de chave.',
+          );
+        },
+      });
   }
   agendarViagem(dadosForm: any, form: NgForm) {
     // Busca os ids diretamente do objeto mapeado pelo formulário HTML (dadosForm)

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 public record ViagemResponse(
         Long id,
+        Long transportId,
         String origem,
         String destino,
         String ufOrigem,
@@ -19,6 +20,7 @@ public record ViagemResponse(
     public ViagemResponse(Viagem v) {
         this(
                 v.getId(),
+                v.getTransport().getId(),
                 v.getRota().getOrigem(),
                 v.getRota().getDestino(),
                 v.getRota().getUfOrigem(),

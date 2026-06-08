@@ -171,31 +171,37 @@
         <h3 class="section-title">Agendar Nova Viagem Operacional</h3>
         <form #formViagem="ngForm" (ngSubmit)="salvarViagem(formViagem.value, formViagem)">
           <div class="grid-form">
+
             <div class="form-group">
               <label>Rota Geral:</label>
-              <select name="rotaId" [(ngModel)]="idRotaSelecionada" #rotaCtrl="ngModel" class="form-control" required>
-                <option value="" disabled selected>Escolha a rota registrada...</option>
+              <select name="rotaId" [(ngModel)]="idRotaSelecionada" class="form-control">
+                <option value="">Escolha a rota registrada...</option>
                 <option *ngFor="let r of listaRotas" [value]="r.id">
-                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) — R$ {{ (r.valorBase || r.valor) | number:'1.2-2' }}
+                  {{ r.origem }} {{ r.ufOrigem ? '(' + r.ufOrigem + ')' : '' }} →
+                  {{ r.destino }} {{ r.ufDestino ? '(' + r.ufDestino + ')' : '' }}
+                  — R$ {{ (r.valor || r.valorBase || 0) | number:'1.2-2' }}
                 </option>
               </select>
             </div>
+
             <div class="form-group">
               <label>Veículo Alocado:</label>
-              <select name="transportId" [(ngModel)]="idTransporteSelecionado" #transportCtrl="ngModel" class="form-control" required>
-                <option value="" disabled selected>Escolha um veículo ativo...</option>
-                <option *ngFor="let v of listaMinhaFrota" value="{{ v.id }}">
-                  {{ v.modelo }} (#{{ v.id }} - {{ v.capacidade }} Lugares)
+              <select name="transportId" [(ngModel)]="idTransporteSelecionado" class="form-control">
+                <option value="">Escolha um veículo ativo...</option>
+                <option *ngFor="let v of listaMinhaFrota" [value]="v.id">
+                  {{ v.modelo }} ({{ v.capacidade }} Lugares)
                 </option>
               </select>
             </div>
+
             <div class="form-group">
               <label>Data e Horário de Partida:</label>
-              <input type="datetime-local" name="dataSaida" ngModel class="form-control" required />
+              <input type="datetime-local" name="dataSaida" [(ngModel)]="dataSaidaCampo" class="form-control" />
             </div>
+
           </div>
           <div class="flex-end-row">
-            <button type="submit" class="btn-submit mt-3" [disabled]="formViagem.invalid">Lançar Viagem</button>
+            <button type="submit" class="btn-submit mt-3">Lançar Viagem</button>
           </div>
         </form>
       </section>

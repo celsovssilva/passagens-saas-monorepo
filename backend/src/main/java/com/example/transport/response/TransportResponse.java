@@ -5,12 +5,13 @@ import lombok.Data;
 
 
 public record TransportResponse(
+        Long id,
         String modelo,
         Integer capacidade,
         String status
         ) {
     public TransportResponse(Transport t) {
-        this(t.getModelo(), t.getVagas(), t.getStatus());
+        this(t.getId(),t.getModelo(), t.getVagas(), t.getStatus());
     }
 
 }

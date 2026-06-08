@@ -83,6 +83,7 @@ public class EmpresaServiceIMPL implements EmpresaService {
 
         return newEmpresa.getTransporte().stream()
                 .map(t -> new TransportResponse(
+                        t.getId(),
                         t.getModelo(),
                         t.getVagas(),
                         t.getStatus()
