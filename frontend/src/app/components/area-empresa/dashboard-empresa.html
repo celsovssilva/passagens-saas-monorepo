@@ -166,7 +166,6 @@
         </form>
       </section>
     </div>
-
     <div *ngIf="telaAtiva === 'viagens'" class="fade-in">
       <section class="card shadow">
         <h3 class="section-title">Agendar Nova Viagem Operacional</h3>
@@ -174,18 +173,18 @@
           <div class="grid-form">
             <div class="form-group">
               <label>Rota Geral:</label>
-              <select name="rotaId" ngModel class="form-control" required>
+              <select name="rotaId" [(ngModel)]="idRotaSelecionada" #rotaCtrl="ngModel" class="form-control" required>
                 <option value="" disabled selected>Escolha a rota registrada...</option>
                 <option *ngFor="let r of listaRotas" [value]="r.id">
-                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) — R$ {{ r.valorBase | number:'1.2-2' }}
+                  {{ r.origem }} ({{ r.ufOrigem }}) → {{ r.destino }} ({{ r.ufDestino }}) — R$ {{ (r.valorBase || r.valor) | number:'1.2-2' }}
                 </option>
               </select>
             </div>
             <div class="form-group">
               <label>Veículo Alocado:</label>
-              <select name="transportId" ngModel class="form-control" required>
+              <select name="transportId" [(ngModel)]="idTransporteSelecionado" #transportCtrl="ngModel" class="form-control" required>
                 <option value="" disabled selected>Escolha um veículo ativo...</option>
-                <option *ngFor="let v of listaMinhaFrota" [value]="v.id">
+                <option *ngFor="let v of listaMinhaFrota" value="{{ v.id }}">
                   {{ v.modelo }} (#{{ v.id }} - {{ v.capacidade }} Lugares)
                 </option>
               </select>
@@ -211,15 +210,16 @@
               <th>Origem / Destino</th>
               <th>Veículo</th>
               <th>Data/Hora Partida</th>
-              <th>Preço Passagem</th> </tr>
+              <th>Vagas Livres</th> </tr>
             </thead>
             <tbody>
             <tr *ngFor="let v of listaMinhasViagens">
               <td>#{{ v.id }}</td>
-              <td>{{ v.origem }} → {{ v.destino }}</td>
-              <td>{{ v.veiculo }}</td>
-              <td>{{ v.dataPartida | date:'dd/MM/yyyy HH:mm' }}</td>
-              <td>R$ {{ v.valor | number:'1.2-2' }}</td> </tr>
+              <td>{{ v.rota?.origem || v.origem }} → {{ v.rota?.destino || v.destino }}</td>
+              <td>{{ v.transport?.modelo || v.transporte?.modelo || v.veiculo || 'Não Alocado' }}</td>
+              <td>{{ (v.dataSaida || v.dataPartida) | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ v.vagasDisponiveis ?? 0 }} / {{ v.capacidade ?? 0 }}</td>
+            </tr>
             <tr *ngIf="listaMinhasViagens.length === 0">
               <td colspan="5" class="sem-dados">Nenhuma viagem agendada para a sua empresa.</td>
             </tr>

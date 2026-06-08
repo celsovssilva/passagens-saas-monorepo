@@ -65,13 +65,11 @@ public class ViagemServiceIMPL implements ViagemService {
     @Override
     public ViagemResponse cadastrarViagem(ViagemRequest dados) {
 
-
         if (dados.rotaId() == null) {
             throw new IllegalArgumentException("O ID da rota não pode ser nulo.");
         }
         Rotas rota = rotasRepository.findById(dados.rotaId())
                 .orElseThrow(() -> new RuntimeException("Rota não encontrada"));
-
 
         if (dados.transportId() == null) {
             throw new IllegalArgumentException("O ID do transporte não pode ser nulo.");
@@ -80,13 +78,15 @@ public class ViagemServiceIMPL implements ViagemService {
         Transport transport = transportRepository.findById(dados.transportId())
                 .orElseThrow(() -> new RuntimeException("Veículo de transporte não encontrado"));
 
-
         Viagem novaViagem = new Viagem();
         novaViagem.setRota(rota);
         novaViagem.setTransport(transport);
         novaViagem.setDataSaida(dados.dataSaida());
-        novaViagem.setCapacidade(dados.capacidade());
-        novaViagem.setVagasDisponiveis(dados.vagasDisponiveis());
+        Integer totalVagas = (transport.getVagas() != null) ? transport.getVagas() : 40;
+
+        novaViagem.setCapacidade(totalVagas);
+        novaViagem.setVagasDisponiveis(totalVagas);
+
         viagemRepository.save(novaViagem);
         return new ViagemResponse(novaViagem);
     }

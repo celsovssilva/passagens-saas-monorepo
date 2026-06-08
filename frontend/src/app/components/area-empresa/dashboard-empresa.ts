@@ -40,8 +40,8 @@ export class DashboardEmpresaComponent implements OnInit {
   }
 
   // Fallbacks de propriedades para binds antigos do dropdown
-  idRotaSelecionada: string = '';
-  idTransporteSelecionado: string = '';
+  idRotaSelecionada: any = '';
+  idTransporteSelecionado: any = '';
 
   constructor(
     private http: HttpClient,
@@ -161,67 +161,67 @@ export class DashboardEmpresaComponent implements OnInit {
       });
   }
 
-  // --- OPERAÇÕES DA API: FROTA ---
   carregarFrota() {
     if (!this.usuarioLogado.empresaId) return;
 
     this.http
-      .get<
-        any[]
-      >(`http://localhost:8080/api/transport/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
-      .subscribe({
-        next: (dados) => {
-          if (Array.isArray(dados)) {
-            this.listaMinhaFrota = dados.map((t: any) => ({
-              id: t.id || t.idTransporte || t.id_transporte,
-              modelo: t.modelo || 'Modelo Não Definido',
-              // Agora lê "capacidade" diretamente da resposta tratada do DTO
-              capacidade: t.capacidade || 0,
-              status: t.status || 'ATIVO',
-            }));
+        .get<any[]>(`http://localhost:8080/api/transport/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
+        .subscribe({
+          next: (dados) => {
+            if (Array.isArray(dados)) {
+              this.listaMinhaFrota = dados.map((t: any) => ({
+                // Garante mapeamento correto mapeando tanto id quanto chaves alternativas comuns do DTO
+                id: t.id ?? t.idTransporte ?? t.id_transporte,
+                modelo: t.modelo || 'Modelo Não Definido',
+                // Sincronizado com o campo mapeado no banco: "vagas"
+                capacidade: t.vagas ?? t.capacidade ?? 0,
+                status: t.status || 'ATIVO',
+              }));
 
-            this.totalVeiculosAtivos = this.listaMinhaFrota.filter(
-              (v) => v.status === 'ATIVO',
-            ).length;
-          }
-          if (this.cdr) this.cdr.detectChanges();
-        },
-        error: (err) => {
-          console.error('Erro ao listar frota dedicada:', err);
-          this.listaMinhaFrota = [];
-          this.totalVeiculosAtivos = 0;
-          if (this.cdr) this.cdr.detectChanges();
-        },
-      });
+              this.totalVeiculosAtivos = this.listaMinhaFrota.filter(
+                  (v) => v.status === 'ATIVO',
+              ).length;
+            }
+            if (this.cdr) this.cdr.detectChanges();
+          },
+          error: (err) => {
+            console.error('Erro ao listar frota dedicada:', err);
+            this.listaMinhaFrota = [];
+            this.totalVeiculosAtivos = 0;
+            if (this.cdr) this.cdr.detectChanges();
+          },
+        });
   }
+
   salvarVeiculo(dadosForm: any, formRef: NgForm) {
-    // Se não houver ID da empresa cadastrado na sessão, avisa antes de enviar
     if (!this.usuarioLogado.empresaId) {
-      alert('Erro: ID da empresa não encontrado na sessão. Faça login novamente.');
+      alert('Erro: ID da empresa não encontrado na sessão.');
       return;
     }
     if (formRef.invalid) return;
 
     const payloadVeiculo = {
       modelo: dadosForm.modelo,
-      capacidade: Number(dadosForm.capacidade), // Certifique-se de que o Java usa "vagas"
+      // Envia os dois formatos para blindar a API contra nulos
+      vagas: Number(dadosForm.capacidade),
+      capacidade: Number(dadosForm.capacidade),
       status: dadosForm.status || 'ATIVO',
       empresaId: Number(this.usuarioLogado.empresaId),
     };
 
     this.http
-      .post('http://localhost:8080/api/transport/cadastrar', payloadVeiculo, this.obterHeaders())
-      .subscribe({
-        next: () => {
-          alert('Veículo adicionado com sucesso à frota!');
-          formRef.resetForm({ status: 'ATIVO' });
-          this.carregarFrota();
-        },
-        error: (err) => {
-          console.error('Falha ao registrar novo veículo corporativo:', err);
-          alert('O servidor rejeitou o cadastro. Verifique o console do Spring Boot.');
-        },
-      });
+        .post('http://localhost:8080/api/transport/cadastrar', payloadVeiculo, this.obterHeaders())
+        .subscribe({
+          next: () => {
+            alert('Veículo adicionado com sucesso à frota!');
+            formRef.resetForm({ status: 'ATIVO' });
+            this.carregarFrota();
+          },
+          error: (err) => {
+            console.error('Falha ao registrar novo veículo corporativo:', err);
+            alert('O servidor rejeitou o cadastro. Verifique as chaves do JSON.');
+          },
+        });
   }
   deletarTransporte(id: number) {
     if (!confirm('Deseja realmente remover este veículo?')) return;
@@ -236,7 +236,6 @@ export class DashboardEmpresaComponent implements OnInit {
         error: (err) => console.error('Erro ao excluir veículo:', err),
       });
   }
-
   carregarOperacoes() {
     this.http.get<any[]>('http://localhost:8080/api/rotas', this.obterHeaders()).subscribe({
       next: (dados) => {
@@ -249,38 +248,46 @@ export class DashboardEmpresaComponent implements OnInit {
     if (!this.usuarioLogado.empresaId) return;
 
     this.http
-        .get<any[]>(`http://localhost:8080/api/viagem/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
-        .subscribe({
-          next: (dados) => {
-            if (Array.isArray(dados)) {
-              let passageirosContados = 0;
-              let receitaSomada = 0;
+      .get<
+        any[]
+      >(`http://localhost:8080/api/viagem/buscar-por-empresa/${this.usuarioLogado.empresaId}`, this.obterHeaders())
+      .subscribe({
+        next: (dados) => {
+          if (Array.isArray(dados)) {
+            let passageirosContados = 0;
+            let receitaSomada = 0;
 
-              this.listaMinhasViagens = dados.map((viagem) => {
-                const vagas = viagem.vagasDisponiveis ?? 0;
-                // O preço base vem direto do campo 'valor' enviado pelo ViagemResponse do Java
-                const preco = viagem.valor || 0;
+            this.listaMinhasViagens = dados.map((viagem) => {
+              // Extrai a capacidade do veículo ou usa fallbacks estruturais do DTO
+              const totalVagas = viagem.capacidade ?? 40;
+              const livres = viagem.vagasDisponiveis ?? totalVagas;
+              const ocupadas = Math.max(0, totalVagas - livres);
+              const preco = viagem.valor || 0;
 
-                return {
-                  id: viagem.id,
-                  origem: viagem.origem || '—',
-                  destino: viagem.destino || '—',
-                  veiculo: viagem.transporteModelo || 'Não Alocado',
-                  dataPartida: viagem.dataSaida || '',
-                  vagasOcupadas: 0,
-                  capacidadeTotal: vagas,
-                  valor: preco // ✅ Adicionado para o HTML conseguir renderizar o preço na tabela!
-                };
-              });
+              // Acumula métricas globais para os cards da home do painel
+              passageirosContados += ocupadas;
+              receitaSomada += ocupadas * preco;
 
-              // Atualiza cards superiores
-              this.totalPassageirosAtendidos = passageirosContados;
-              this.receitaOperacional = receitaSomada;
-            }
-            if (this.cdr) this.cdr.detectChanges();
-          },
-          error: (err) => console.error('Erro ao listar viagens corporativas:', err),
-        });
+              return {
+                id: viagem.id,
+                origem: viagem.origem || '—',
+                destino: viagem.destino || '—',
+                veiculo: viagem.transporteModelo || 'Não Alocado',
+                dataPartida: viagem.dataSaida || '',
+                vagasDisponiveis: livres,
+                capacidade: totalVagas,
+                valor: preco,
+              };
+            });
+
+            // Atualiza dinamicamente os cards superiores da aba inicial
+            this.totalPassageirosAtendidos = passageirosContados;
+            this.receitaOperacional = receitaSomada;
+          }
+          if (this.cdr) this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Erro ao listar viagens corporativas:', err),
+      });
   }
 
   salvarItinerarioRota(dadosForm: any, form: NgForm) {
@@ -307,11 +314,51 @@ export class DashboardEmpresaComponent implements OnInit {
       });
   }
 
-  // --- REDIRECIONADOR DE SUBMISSÃO COMPATÍVEL ---
-  salvarViagem(valoresForm: any, formRef: NgForm) {
-    this.agendarViagem(valoresForm, formRef);
-  }
+  salvarViagem(valoresForm: any, formRef: any) {
+    // Busca prioritariamente das variáveis ligadas pelo [(ngModel)] e faz fallback para o form bruto
+    const idDaRota = this.idRotaSelecionada || valoresForm?.rotaId;
+    const idDoTransporte = this.idTransporteSelecionado || valoresForm?.transportId;
 
+    const rotaNum = parseInt(idDaRota, 10);
+    const transportNum = parseInt(idDoTransporte, 10);
+
+    if (isNaN(rotaNum) || isNaN(transportNum) || !valoresForm?.dataSaida) {
+      alert('Por favor, selecione uma rota, um veículo válido da sua frota ativa e uma data de saída!');
+      return;
+    }
+
+    const payloadRequest = {
+      id: null,
+      rotaId: rotaNum,
+      transportId: transportNum,
+      dataSaida: valoresForm.dataSaida,
+      empresaId: this.usuarioLogado?.empresaId || this.dadosEmpresa?.id || null,
+      capacidade: null,
+      vagasDisponiveis: null,
+      cpf: null,
+      nomePassageiro: null,
+      userId: null,
+    };
+
+    console.log('Dados saindo do Angular para o Java:', payloadRequest);
+
+    this.http.post('http://localhost:8080/api/viagem/cadastrar', payloadRequest, this.obterHeaders()).subscribe({
+      next: () => {
+        alert('Viagem cadastrada com sucesso!');
+
+        // Reseta os selects para o estado inicial padrão
+        this.idRotaSelecionada = '';
+        this.idTransporteSelecionado = '';
+
+        if (formRef) formRef.resetForm();
+        this.carregarOperacoes(); // Atualiza a tabela na tela
+      },
+      error: (err) => {
+        console.error('Erro no servidor:', err);
+        alert('Falha ao cadastrar no banco de dados. Verifique o terminal do Spring.');
+      }
+    });
+  }
   agendarViagem(dadosForm: any, form: NgForm) {
     // Busca os ids diretamente do objeto mapeado pelo formulário HTML (dadosForm)
     // Se o HTML usar a propriedade local antiga, faz o fallback para ela
